@@ -1,7 +1,7 @@
 
 class LogEntry {
   final int time;
-  final double temperature;
+  final int temperature;
   final double? ror;
   final String? event;
 
@@ -15,7 +15,7 @@ class LogEntry {
   factory LogEntry.fromJson(Map<String, dynamic> json) {
     return LogEntry(
       time: json['time'],
-      temperature: json['temperature'].toDouble(),
+      temperature: json['temperature'],
       ror: json['ror'] != null ? json['ror'].toDouble() : null,
       event: json['event'],
     );
