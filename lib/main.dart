@@ -51,7 +51,7 @@ class _RoastLoggerState extends State<RoastLogger> {
     super.initState();
     // initialize roast log
     _roastLog = RoastLog(
-      logEntries: [],
+      logEntries: [], 
       currentTime: 0,
       beanInfo: BeanInfo(
         name: 'Arabica',
@@ -69,6 +69,19 @@ class _RoastLoggerState extends State<RoastLogger> {
         roastLevelName: 'Light',
       ),
     );
+
+    //テスト用データを追加
+    //30秒ごとに温度を追加、10分間
+    for (int i = 0; i < 600; i += 30) {
+      //100度から220度までだんだん上がっていくデータにする
+      int t = 100 + (i * 120) ~/ 600;
+      _addLogEntry(LogEntry(
+        time: i,
+        temperature: i == 30 ? 100 : t,
+        ror: calcROR(t),
+        event: Event.none,
+      ));
+    }
 
 
   }
@@ -190,7 +203,8 @@ class _RoastLoggerState extends State<RoastLogger> {
     }
 
     // diffTempやdiffTimeをdoubleに変換して計算
-    return (diffTemp / diffTime) * 60;
+    // return (diffTemp / diffTime) * 60;
+    return ((diffTemp / diffTime) * 60 * 10).round() / 10;
   }
 
 
@@ -305,8 +319,8 @@ class InputEvents extends StatelessWidget {
 class Event {
   static const String none = '-';
   static const String maillard = 'Maillard';
-  static const String firstCrack = 'First Crack';
-  static const String secondCrack = 'Second Crack';
+  static const String firstCrack = '1st';
+  static const String secondCrack = '2nd';
   static const String drop = 'Drop';
 }
 
@@ -326,19 +340,19 @@ class TimerWidget extends StatelessWidget {
         TimeLabel(currentTime: currentTime),
         Row(
           children: [            
-            OutlinedButton(
+            ElevatedButton(
               onPressed: () {
                 toggleTimer();
               },
               child: Text(timerState == 0 ? 'Start' : 'Stop'),
             ),
-            OutlinedButton(
+            ElevatedButton(
               //timerStateが1の場合は非活性
               onPressed: timerState == 1 ? null : () {
                 resetTimer();
               },
               style: ElevatedButton.styleFrom(
-                primary: timerState == 1 ? Colors.grey : Colors.transparent,
+                primary: timerState == 1 ? Colors.grey : Colors.red,
               ),
               child: const Text('Reset'),
             ),
@@ -473,15 +487,24 @@ class TimelineGridItem extends StatelessWidget {
   // グリッドは横スクロールするので、Columnで表示する。
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return Container(
+      padding: const EdgeInsets.all(8.0),
+      margin: const EdgeInsets.all(2.0),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(4.0),
+      ),
       child:
         Column(
         children: [
-          Text('Time: ${entry.time}'),
-          Text('Beans Temp: ${entry.temperature}'),
-          Text('ROR: ${entry.ror}'),
-          Text('Event: ${entry.event}'),
+          // Text('Time: ${entry.time}'),
+          // Text('Beans Temp: ${entry.temperature}'),
+          // Text('ROR: ${entry.ror}'),
+          // Text('Event: ${entry.event}'),
+          Text('${entry.time ~/ 60}:${(entry.time % 60).toString().padLeft(2, '0')}'),
+          Text('${entry.temperature}'),
+          Text('${entry.ror}'),
+          Text('${entry.event}'),
         ],
       )
     ); 
@@ -490,7 +513,20 @@ class TimelineGridItem extends StatelessWidget {
 
 class ChartDisplay extends StatelessWidget {
   final List<LogEntry> logEntries;
-  const ChartDisplay({Key? key, required this.logEntries}) : super(key: key);
+  List<FlSpot>? temperatureSpots;
+  List<FlSpot>? rorSpots;
+  ChartDisplay({Key? key, required this.logEntries}) : super(key: key);
+
+  void init() {
+    // ログエントリーからグラフ用のデータを作成
+    temperatureSpots = logEntries.map((entry) {
+      return FlSpot(entry.time.toDouble(), entry.temperature.toDouble());
+    }).toList();
+
+    rorSpots = logEntries.map((entry) {
+      return FlSpot(entry.time.toDouble(), entry.ror!.toDouble());
+    }).toList();
+  }
 
   // 時間を分と秒に変換するメソッド
   String _formatTime(int time) {
@@ -501,128 +537,187 @@ class ChartDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (logEntries.isEmpty) {
-      return const Center(
-        child: Text('No Data Available'),
-      );
-    }
-
-    // 温度データのスポット
-    List<FlSpot> temperatureSpots = logEntries
-        .where((entry) => !entry.temperature.isNaN && !entry.temperature.isInfinite)
-        .map((entry) => FlSpot(entry.time.toDouble(), entry.temperature.toDouble()))
-        .toList();
-
-    // RORデータのスポット
-    List<FlSpot> rorSpots = logEntries
-        .where((entry) => entry.ror != null && !entry.ror!.isNaN && !entry.ror!.isInfinite)
-        .map((entry) => FlSpot(entry.time.toDouble(), entry.ror!.toDouble()))
-        .toList();
-
-    return Container(
-      height: 300, // 明示的な高さを指定
-      padding: const EdgeInsets.all(16.0),
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: true,
-            horizontalInterval: 60,
-            verticalInterval: 20,
-            getDrawingHorizontalLine: (value) {
-              return FlLine(
-                color: Colors.grey.withOpacity(0.3),
-                strokeWidth: 1,
-              );
-            },
-            getDrawingVerticalLine: (value) {
-              return FlLine(
-                color: Colors.grey.withOpacity(0.3),
-                strokeWidth: 1,
-              );
-            },
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            rightTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text('${value.toInt()} ROR'),
-                  );
-                },
-                interval: 5, // RORのスケールを調整
-              ),
-            ),
-            topTitles: AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: 120, // 2分（120秒）ごとにラベリング
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text(_formatTime(value.toInt())),
-                  );
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                interval: 120, // 温度データ用のスケール調整
-                getTitlesWidget: (value, meta) {
-                  return SideTitleWidget(
-                    axisSide: meta.axisSide,
-                    child: Text('${value.toInt()}°C'),
-                  );
-                },
-              ),
-            ),
-          ),
-          borderData: FlBorderData(
-            show: true,
-            border: Border.all(color: Colors.grey.withOpacity(0.5)),
-          ),
-          minX: 0,
-          maxX: logEntries.last.time.toDouble(),
-          minY: 0,
-          maxY: 100, // 左軸（温度）の最大値
-          lineBarsData: [
-            // 温度データのライン
-            LineChartBarData(
-              spots: temperatureSpots,
-              isCurved: true,
-              color: Colors.blue,
-              barWidth: 4,
-              dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(
+    init();
+    return Column(
+      children: [
+        // 温度グラフ
+        Container(
+          height: 200, // 明示的な高さを指定
+          padding: const EdgeInsets.all(16.0),
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
                 show: true,
-                color: Colors.blue.withOpacity(0.2),
+                drawVerticalLine: true,
+                drawHorizontalLine: false,
+                horizontalInterval: 20,
+                verticalInterval: 60,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
+                getDrawingVerticalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
               ),
-            ),
-            // RORデータのライン（右側Y軸に対応）
-            LineChartBarData(
-              spots: rorSpots,
-              isCurved: true,
-              color: Colors.red,
-              barWidth: 4,
-              dotData: FlDotData(show: false),
-              belowBarData: BarAreaData(
+              titlesData: FlTitlesData(
                 show: true,
-                color: Colors.red.withOpacity(0.2),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    interval: 120, // 2分（120秒）ごとにラベリング
+                    getTitlesWidget: (value, meta) {
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        child: Text(_formatTime(value.toInt())),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    interval: 40, // 温度データ用のスケール調整
+                    getTitlesWidget: (value, meta) {
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        child: Text('${value.toInt()}'),
+                      );
+                    },
+                  ),
+                ),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border.all(color: Colors.grey.withOpacity(0.5)),
+              ),
+              minX: 0,
+              maxX: temperatureSpots!.last.x,
+              minY: 80,
+              maxY: 280, // 温度グラフの最大値
+              lineBarsData: [
+                LineChartBarData(
+                  spots: temperatureSpots,
+                  isCurved: true,
+                  color: Colors.blue,
+                  barWidth: 4,
+                  dotData: FlDotData(show: false),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Colors.blue.withOpacity(0.2),
+                  ),
+                ),
+              ],
+              clipData: FlClipData.all(),
+              extraLinesData: ExtraLinesData(
+                horizontalLines: [
+                  HorizontalLine(
+                    y: 200,
+                    color: Colors.red.withOpacity(0.5),
+                    strokeWidth: 2,
+                    // dashArray: [5, 5], // ダッシュラインで右軸最大値を視覚化
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
-      ),
+        
+        // RORグラフ
+        Container(
+          height: 100, // 明示的な高さを指定
+          padding: const EdgeInsets.all(16.0),
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: true,
+                drawHorizontalLine: false,
+                horizontalInterval: 5,
+                verticalInterval: 60,
+                getDrawingHorizontalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
+                getDrawingVerticalLine: (value) {
+                  return FlLine(
+                    color: Colors.grey.withOpacity(0.3),
+                    strokeWidth: 1,
+                  );
+                },
+              ),
+              titlesData: FlTitlesData(
+                show: true,
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: false,
+                    reservedSize: 20,
+                    interval: 120, // 2分（120秒）ごとにラベリング
+                    getTitlesWidget: (value, meta) {
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        child: Text(_formatTime(value.toInt())),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    interval: 15, // RORデータ用のスケール調整
+                    getTitlesWidget: (value, meta) {
+                      return SideTitleWidget(
+                        axisSide: meta.axisSide,
+                        child: Text('${value.toInt()}'),
+                      );
+                    },
+                  ),
+                ),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+              borderData: FlBorderData(
+                show: true,
+                border: Border.all(color: Colors.grey.withOpacity(0.5)),
+              ),
+              minX: 0,
+              maxX: rorSpots!.last.x,
+              minY: -30,
+              maxY: 30, // RORグラフの最大値
+              lineBarsData: [
+                LineChartBarData(
+                  spots: rorSpots,
+                  isCurved: true,
+                  color: Colors.red,
+                  barWidth: 4,
+                  dotData: FlDotData(show: false),
+                  belowBarData: BarAreaData(
+                    show: true,
+                    color: Colors.red.withOpacity(0.2),
+                  ),
+                ),
+              ],
+              clipData: FlClipData.all(),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
