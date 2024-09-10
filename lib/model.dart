@@ -3,7 +3,7 @@ class LogEntry {
   final int time;
   final int temperature;
   final double? ror;
-  final String? event;
+  String? event;
 
   LogEntry({
     required this.time,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'model.dart';
@@ -85,6 +86,7 @@ class _RoastLoggerState extends State<RoastLogger> {
           // timer display
             TimerWidget(
               currentTime: _currentTime,
+              timerState: _timer == null ? 0 : 1,
               startTimer: _startTimer,
               stopTimer: _stopTimer,
               toggleTimer: _toggleTimer,
@@ -93,6 +95,9 @@ class _RoastLoggerState extends State<RoastLogger> {
             // imput ui
             InputTemperature(
               inputTemperature: _inputTemperature,
+            ),
+            InputEvents(
+              addEvent: _addEvent,
             ),
             // timeline grid
             TimelineGrid(
@@ -109,6 +114,7 @@ class _RoastLoggerState extends State<RoastLogger> {
             ),
             WebSocketConroller(
               inputTemperature: _inputTemperature,
+              updateTemperture: _updateTemperture,
             ),
           ],
         ),
@@ -128,6 +134,28 @@ class _RoastLoggerState extends State<RoastLogger> {
     super.dispose();
   }
 
+  void _addEvent(String event) {
+    //　直近のLogEntryにeventを追加する
+    debugPrint('add event: $event');
+    if (_roastLog!.logEntries.isNotEmpty) {
+      setState(() {
+        _roastLog!.logEntries[_roastLog!.logEntries.length - 1].event = event;
+        _updateAll();
+      });
+    }
+    else {
+      debugPrint('logEntries is empty');
+    }
+  }
+
+  void _updateTemperture(int beansTemp, int envTemp) {
+    // update temperture
+    setState(() {
+      _beansTemp = beansTemp;
+      _envTemp = envTemp;
+    });
+  }
+
   void _inputTemperature(int temperature) {
     debugPrint('input temperature: $temperature');
     double ror = calcROR(temperature);
@@ -139,6 +167,7 @@ class _RoastLoggerState extends State<RoastLogger> {
       time: _currentTime,
       temperature: temperature,
       ror: ror,
+      event: Event.none,
     ));
   }
 
@@ -166,39 +195,20 @@ class _RoastLoggerState extends State<RoastLogger> {
 
 
   void _addLogEntry(LogEntry logEntry) {
-    // add log entry
-    _roastLog!.logEntries.add(logEntry);  
+    // もし前回値と同じ時刻の場合は、更新する
+    if (_roastLog!.logEntries.isNotEmpty && _roastLog!.logEntries.last.time == logEntry.time) {
+      _roastLog!.logEntries[_roastLog!.logEntries.length - 1] = logEntry;
+    } else {
+      // それ以外の場合は、新規追加
+      _roastLog!.logEntries.add(logEntry);
+    }
     setState(() {
       _updateAll();
     });
   }
 
-  void _updateTime() {
-    // update time
-  }
-
-  void _updateTemp() {
-    // update temp
-  }
-
-  void _updateTimeline() {
-    // update timeline
-  }
-
-  void _updateChart() {
-    // update chart
-  }
-
-  void _updateTempDisplay() {
-    // update temp display
-  }
-
   void _updateAll() {
-    _updateTime();
-    _updateTemp();
-    _updateTimeline();
-    _updateChart();
-    _updateTempDisplay();
+    // 更新用に設けているメソッドだが、現状は何もしない
   }
 
   void _startTimer() {
@@ -215,6 +225,9 @@ class _RoastLoggerState extends State<RoastLogger> {
     // stop timer
     _timer?.cancel();
     _timer = null;
+    setState(() {
+      _updateAll();
+    });
   }
 
   void _toggleTimer() {
@@ -240,30 +253,96 @@ class _RoastLoggerState extends State<RoastLogger> {
   }
 }
 
+class InputEvents extends StatelessWidget {
+  final void Function(String event) addEvent;
+  const InputEvents({Key? key, required this.addEvent}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // イベントボタンを配置
+        // none, maillard, first crack, second crack, drop
+        Row(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                addEvent(Event.none);
+              },
+              child: Text(Event.none),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                addEvent(Event.maillard);
+              },
+              child: Text(Event.maillard),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                addEvent(Event.firstCrack);
+              },
+              child: Text(Event.firstCrack),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                addEvent(Event.secondCrack);
+              },
+              child: Text(Event.secondCrack),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                addEvent(Event.drop);
+              },
+              child: Text(Event.drop),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class Event {
+  static const String none = '-';
+  static const String maillard = 'Maillard';
+  static const String firstCrack = 'First Crack';
+  static const String secondCrack = 'Second Crack';
+  static const String drop = 'Drop';
+}
+
 class TimerWidget extends StatelessWidget {
   final int currentTime;
+  final int timerState; // 0: stop, 1: start
   final void Function() startTimer;
   final void Function() stopTimer;
   final void Function() toggleTimer;
   final void Function() resetTimer;
-  const TimerWidget({Key? key, required this.currentTime, required this.startTimer, required this.stopTimer, required this.toggleTimer, required this.resetTimer}) : super(key: key);
+  const TimerWidget({Key? key, required this.currentTime, required this.timerState, required this.startTimer, required this.stopTimer, required this.toggleTimer, required this.resetTimer}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         TimeLabel(currentTime: currentTime),
-        ButtonRow(
-          onPressed: () {
-            toggleTimer();
-          },
-          label: 'Start/Stop',
-        ),
-        ButtonRow(
-          onPressed: () {
-            resetTimer();
-          },
-          label: 'Reset',
+        Row(
+          children: [            
+            OutlinedButton(
+              onPressed: () {
+                toggleTimer();
+              },
+              child: Text(timerState == 0 ? 'Start' : 'Stop'),
+            ),
+            OutlinedButton(
+              //timerStateが1の場合は非活性
+              onPressed: timerState == 1 ? null : () {
+                resetTimer();
+              },
+              style: ElevatedButton.styleFrom(
+                primary: timerState == 1 ? Colors.grey : Colors.transparent,
+              ),
+              child: const Text('Reset'),
+            ),
+          ],
         ),
       ],
     );
@@ -276,21 +355,11 @@ class TimeLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text('Time: $currentTime');
-  }
-}
-
-class ButtonRow extends StatelessWidget {
-  final VoidCallback onPressed;
-  final String label;
-  const ButtonRow({Key? key, required this.onPressed, required this.label}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      child: Text(label),
-    );
+    // return Text('Time: $currentTime');
+    // '00:00'形式に変換
+    int minutes = currentTime ~/ 60;
+    int seconds = currentTime % 60;
+    return Text('${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}');
   }
 }
 
@@ -321,15 +390,22 @@ class _InputTemperatureState extends State<InputTemperature> {
     return Column(
         children: [
           // 豆温度の入力エリア
-          TextField(
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-              labelText: 'Beans Temp',
-            ),
-            controller: _beansTempController,
-          ),
           Row(
+            mainAxisAlignment: MainAxisAlignment.start,
             children:[
+              Flexible(
+                child:
+                  TextField(
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Beans Temp',
+                      
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    controller: _beansTempController,
+                  ),
+              ),
               // 温度を上げ下げするボタン
               ElevatedButton(
                 onPressed: () {
@@ -346,17 +422,16 @@ class _InputTemperatureState extends State<InputTemperature> {
                 },
                 child: Text('Down'),
               ),
+              // 温度追加のボタン
+              ElevatedButton(
+                onPressed: () {
+                  // 豆温度を追加
+                  widget.inputTemperature(int.parse(_beansTempController.text));
+                },
+                child: Text('Add'),
+              ),
             ],
           ),
-          // 温度追加のボタン
-          ElevatedButton(
-            onPressed: () {
-              // 豆温度を追加
-              widget.inputTemperature(int.parse(_beansTempController.text));
-            },
-            child: Text('Add'),
-          ),
-          
         ],
     );
   }
@@ -365,19 +440,29 @@ class _InputTemperatureState extends State<InputTemperature> {
 
 class TimelineGrid extends StatelessWidget {
   final List<LogEntry> logEntries;
-  const TimelineGrid({Key? key, required this.logEntries}) : super(key: key);
+  TimelineGrid({Key? key, required this.logEntries}) : super(key: key);
+  // グリッド表示間隔のデフォルト値
+
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return 
+    Column(
       children: [
-        for (var entry in logEntries)
-          // グリッドとして横一列に追加していく。
-          // 一つのグリッドは、時間、豆温度、ROR、イベントを表示する。
-          TimelineGridItem(entry: entry),
-          // Text('Time: ${entry.time}, Beans Temp: ${entry.temperature}, ROR: ${entry.ror}\n'),
+        
+        SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                for (var entry in logEntries)
+                  TimelineGridItem(entry: entry),
+              ],
+            ),
+          ),
+        
       ],
-    );
+    );  
   }
 }
 
@@ -407,83 +492,146 @@ class ChartDisplay extends StatelessWidget {
   final List<LogEntry> logEntries;
   const ChartDisplay({Key? key, required this.logEntries}) : super(key: key);
 
-
+  // 時間を分と秒に変換するメソッド
   String _formatTime(int time) {
-    // 時間を分と秒に変換する
     int minutes = time ~/ 60;
     int seconds = time % 60;
-    return '$minutes:$seconds';
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
-  // fl_chartを使ってliner chartを表示する
-  // logEntriesから、時間,豆温度,RORを取得して、それを2軸グラフに表示する。
   @override
   Widget build(BuildContext context) {
-    // logEntriesが空の場合、空のコンテナを表示する
     if (logEntries.isEmpty) {
-      return Container(
-        child: Center(
-          child: Text('No Data Available'),
-        ),
+      return const Center(
+        child: Text('No Data Available'),
       );
     }
 
-    // グラフデータを作成する前に、値がNaNやInfinityでないことを確認する
+    // 温度データのスポット
     List<FlSpot> temperatureSpots = logEntries
-        .where((entry) => entry.temperature != null && !entry.temperature.isNaN && !entry.temperature.isInfinite)
+        .where((entry) => !entry.temperature.isNaN && !entry.temperature.isInfinite)
         .map((entry) => FlSpot(entry.time.toDouble(), entry.temperature.toDouble()))
         .toList();
 
+    // RORデータのスポット
     List<FlSpot> rorSpots = logEntries
         .where((entry) => entry.ror != null && !entry.ror!.isNaN && !entry.ror!.isInfinite)
         .map((entry) => FlSpot(entry.time.toDouble(), entry.ror!.toDouble()))
         .toList();
 
     return Container(
-        height: 300, // 明示的な高さを指定
-          child: LineChart(
-            LineChartData(
-            titlesData: FlTitlesData(
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  getTitlesWidget: (value, meta) {
-                    return SideTitleWidget(
-                      axisSide: meta.axisSide,
-                      child: Text(_formatTime(value.toInt())),
-                    );
-                  },
-                  reservedSize: 40,
-                ),
+      height: 300, // 明示的な高さを指定
+      padding: const EdgeInsets.all(16.0),
+      child: LineChart(
+        LineChartData(
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: true,
+            horizontalInterval: 60,
+            verticalInterval: 20,
+            getDrawingHorizontalLine: (value) {
+              return FlLine(
+                color: Colors.grey.withOpacity(0.3),
+                strokeWidth: 1,
+              );
+            },
+            getDrawingVerticalLine: (value) {
+              return FlLine(
+                color: Colors.grey.withOpacity(0.3),
+                strokeWidth: 1,
+              );
+            },
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            rightTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) {
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Text('${value.toInt()} ROR'),
+                  );
+                },
+                interval: 5, // RORのスケールを調整
               ),
             ),
-            lineBarsData: [
-              // 温度データのライン
-              LineChartBarData(
-                spots: temperatureSpots,
-                isCurved: true,
-                color: Colors.blue,
+            topTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                interval: 120, // 2分（120秒）ごとにラベリング
+                getTitlesWidget: (value, meta) {
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Text(_formatTime(value.toInt())),
+                  );
+                },
               ),
-              // RORデータのライン
-              LineChartBarData(
-                spots: rorSpots,
-                isCurved: true,
-                color: Colors.red,
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                interval: 120, // 温度データ用のスケール調整
+                getTitlesWidget: (value, meta) {
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    child: Text('${value.toInt()}°C'),
+                  );
+                },
               ),
-            ],
+            ),
           ),
+          borderData: FlBorderData(
+            show: true,
+            border: Border.all(color: Colors.grey.withOpacity(0.5)),
+          ),
+          minX: 0,
+          maxX: logEntries.last.time.toDouble(),
+          minY: 0,
+          maxY: 100, // 左軸（温度）の最大値
+          lineBarsData: [
+            // 温度データのライン
+            LineChartBarData(
+              spots: temperatureSpots,
+              isCurved: true,
+              color: Colors.blue,
+              barWidth: 4,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.blue.withOpacity(0.2),
+              ),
+            ),
+            // RORデータのライン（右側Y軸に対応）
+            LineChartBarData(
+              spots: rorSpots,
+              isCurved: true,
+              color: Colors.red,
+              barWidth: 4,
+              dotData: FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                color: Colors.red.withOpacity(0.2),
+              ),
+            ),
+          ],
         ),
-      
+      ),
     );
   }
 }
 
 
-
 class TempDisplay extends StatelessWidget {
-  final int beansTemp;
-  final int envTemp;
-  const TempDisplay({Key? key, required this.beansTemp, required this.envTemp}) : super(key: key);
+  int beansTemp;
+  int envTemp;
+  TempDisplay({Key? key, required this.beansTemp, required this.envTemp}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -493,7 +641,8 @@ class TempDisplay extends StatelessWidget {
 
 class WebSocketConroller extends StatelessWidget {
   final void Function(int temperature) inputTemperature;
-  WebSocketConroller({Key? key, required this.inputTemperature}) : super(key: key);
+  final void Function(int beansTemp, int envTemp) updateTemperture;
+  WebSocketConroller({Key? key, required this.inputTemperature, required this.updateTemperture}) : super(key: key);
 
   WebSocketChannel? _channel;
   String receiveData = '';
@@ -522,6 +671,7 @@ class WebSocketConroller extends StatelessWidget {
         // { "BT": 26.75, "ET": 28.38 }形式
         // debugPrint("__" + receiveData);
         
+        updateTemperture(temps['BT'].toInt(), temps['ET'].toInt());
         inputTemperature(temps['BT'].toInt());
     });
   }
