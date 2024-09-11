@@ -642,7 +642,7 @@ class ChartDisplay extends StatelessWidget {
               maxY: 280, // 温度グラフの最大値
               lineBarsData: [
                 LineChartBarData(
-                  spots: temperatureSpots,
+                  spots: temperatureSpots == null ? [] : temperatureSpots!,
                   isCurved: true,
                   color: Colors.blue,
                   barWidth: 4,
@@ -736,7 +736,7 @@ class ChartDisplay extends StatelessWidget {
               maxY: 30, // RORグラフの最大値
               lineBarsData: [
                 LineChartBarData(
-                  spots: rorSpots,
+                  spots: rorSpots == null ? [] : rorSpots!,
                   isCurved: true,
                   color: Colors.red,
                   barWidth: 4,
