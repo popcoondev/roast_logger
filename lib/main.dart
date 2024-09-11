@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'model.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const MyApp());
@@ -33,18 +34,11 @@ class RoastLogger extends StatefulWidget {
 }
 
 class _RoastLoggerState extends State<RoastLogger> {
-  int _counter = 0;
   int _currentTime = 0;
   int _beansTemp = 0;
   int _envTemp = 0;
   Timer? _timer;
   RoastLog? _roastLog;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   @override
   void initState() {
@@ -92,7 +86,10 @@ class _RoastLoggerState extends State<RoastLogger> {
       appBar: AppBar(
         title: Text('Roast Logger'),
       ),
-      body: Center(
+      body: Container(
+        width: double.infinity,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -117,26 +114,39 @@ class _RoastLoggerState extends State<RoastLogger> {
               logEntries: _roastLog!.logEntries,
             ),
             // line chart
-            ChartDisplay(
-              logEntries: _roastLog!.logEntries,
-            ), 
-            // temp display
-            TempDisplay(
-              beansTemp: _beansTemp,
-              envTemp: _envTemp,
+            Container(
+              //丸角の枠線をつける
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(4.0),
+              ),
+              padding: const EdgeInsets.all(8.0),
+              // margin: const EdgeInsets.all(8.0),
+              child: 
+                Column(
+                  children: [
+                    // temp display
+                    TempDisplay(
+                      beansTemp: _beansTemp,
+                      envTemp: _envTemp,
+                    ),
+                    ChartDisplay(
+                      logEntries: _roastLog!.logEntries,
+                    ), 
+                  ],
+                ),
             ),
-            WebSocketConroller(
-              inputTemperature: _inputTemperature,
-              updateTemperture: _updateTemperture,
+            Row(
+              children: [
+                WebSocketConroller(
+                  inputTemperature: _inputTemperature,
+                  updateTemperture: _updateTemperture,
+                ),
+              ],
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 
@@ -335,28 +345,29 @@ class TimerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        TimeLabel(currentTime: currentTime),
-        Row(
+        Column(
           children: [            
+            TimeLabel(currentTime: currentTime),
             ElevatedButton(
               onPressed: () {
                 toggleTimer();
               },
               child: Text(timerState == 0 ? 'Start' : 'Stop'),
             ),
-            ElevatedButton(
-              //timerStateが1の場合は非活性
-              onPressed: timerState == 1 ? null : () {
-                resetTimer();
-              },
-              style: ElevatedButton.styleFrom(
-                primary: timerState == 1 ? Colors.grey : Colors.red,
-              ),
-              child: const Text('Reset'),
-            ),
           ],
+        ),
+        ElevatedButton(
+          //timerStateが1の場合は非活性
+          onPressed: timerState == 1 ? null : () {
+            resetTimer();
+          },
+          // timeStateが1の場合は灰色、それ以外は赤色
+          style: ElevatedButton.styleFrom(
+            backgroundColor: timerState == 1 ? Colors.grey : Colors.red,
+          ),
+          child: const Text('Reset'),
         ),
       ],
     );
@@ -373,7 +384,24 @@ class TimeLabel extends StatelessWidget {
     // '00:00'形式に変換
     int minutes = currentTime ~/ 60;
     int seconds = currentTime % 60;
-    return Text('${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}');
+    // return Text('${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}');
+    // 大きめのフォントで、時間を表示
+    return Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(8.0),
+      // margin: const EdgeInsets.all(8.0),
+      // decoration: BoxDecoration(
+      //   border: Border.all(color: Colors.grey),
+      //   borderRadius: BorderRadius.circular(4.0),
+      // ),
+      child: Text(
+        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
+        style: GoogleFonts.roboto(
+          fontSize: 48,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 }
 
@@ -407,35 +435,40 @@ class _InputTemperatureState extends State<InputTemperature> {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children:[
-              Flexible(
+              SizedBox(
+                width: 100,
                 child:
                   TextField(
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       labelText: 'Beans Temp',
-                      
                       contentPadding: EdgeInsets.symmetric(horizontal: 10),
                     ),
                     controller: _beansTempController,
                   ),
               ),
-              // 温度を上げ下げするボタン
-              ElevatedButton(
-                onPressed: () {
-                  // 豆温度を上げる
-                  _beansTempController.text = (int.parse(_beansTempController.text) + 1).toString();
-
+              ToggleButtons(
+                borderColor: Colors.grey,
+                borderWidth: 2,
+                borderRadius: BorderRadius.circular(5.0),
+                selectedBorderColor: Colors.red,
+                onPressed: (index){
+                  if(index == 0){
+                    // 豆温度を上げる
+                    _beansTempController.text = (int.parse(_beansTempController.text) + 1).toString();  
+                  }else{
+                    // 豆温度を下げる
+                    _beansTempController.text = (int.parse(_beansTempController.text) - 1).toString();
+                  }
                 },
-                child: Text('Up'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  // 豆温度を下げる
-                  _beansTempController.text = (int.parse(_beansTempController.text) - 1).toString();
-                },
-                child: Text('Down'),
-              ),
+                isSelected: [false,false],
+                children: [
+                  Padding(padding: EdgeInsets.all(4.0), child: Text('▲')),
+                  Padding(padding: EdgeInsets.all(4.0), child: Text('▼')),
+                ],
+                
+              ),  
               // 温度追加のボタン
               ElevatedButton(
                 onPressed: () {
@@ -543,8 +576,9 @@ class ChartDisplay extends StatelessWidget {
         // 温度グラフ
         Container(
           height: 200, // 明示的な高さを指定
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.only(top: 20, right: 40, bottom: 0, left: 40),
           child: LineChart(
+            
             LineChartData(
               gridData: FlGridData(
                 show: true,
@@ -599,7 +633,7 @@ class ChartDisplay extends StatelessWidget {
                 ),
               ),
               borderData: FlBorderData(
-                show: true,
+                show: false,
                 border: Border.all(color: Colors.grey.withOpacity(0.5)),
               ),
               minX: 0,
@@ -637,7 +671,7 @@ class ChartDisplay extends StatelessWidget {
         // RORグラフ
         Container(
           height: 100, // 明示的な高さを指定
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.only(top: 0, right: 40, bottom: 20, left: 40),
           child: LineChart(
             LineChartData(
               gridData: FlGridData(
@@ -693,7 +727,7 @@ class ChartDisplay extends StatelessWidget {
                 ),
               ),
               borderData: FlBorderData(
-                show: true,
+                show: false,
                 border: Border.all(color: Colors.grey.withOpacity(0.5)),
               ),
               minX: 0,
@@ -730,7 +764,44 @@ class TempDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text('Beans Temp: $beansTemp, Env Temp: $envTemp');
+    // return Text('Beans Temp: $beansTemp, Env Temp: $envTemp');
+    // 大きめのフォントで、豆温度と環境温度を表示
+    // 豆温度が200度を超えたら赤色にする
+    // 'BT: 200.0℃'という枠、'ET: 30.0℃'という枠を表示
+    return Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              margin: const EdgeInsets.all(8.0),
+              // decoration: BoxDecoration(
+              //   border: Border.all(color: Colors.grey),
+              //   borderRadius: BorderRadius.circular(4.0),
+              // ),
+              child: Text( //00.0℃の形式に変更
+                'BT: ${beansTemp.toStringAsFixed(1)}℃',
+                style: TextStyle(
+                  fontSize: 24,
+                  color: beansTemp > 200 ? Colors.red : Colors.black,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(8.0),
+              margin: const EdgeInsets.all(8.0),
+              // decoration: BoxDecoration(
+              //   border: Border.all(color: Colors.grey),
+              //   borderRadius: BorderRadius.circular(4.0),
+              // ),
+              child: Text(
+                'ET: ${envTemp.toStringAsFixed(1)}℃',
+                style: const TextStyle(
+                  fontSize: 24,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ],
+    );
   }
 }
 
@@ -782,7 +853,7 @@ class WebSocketConroller extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
         ElevatedButton(
           onPressed: () {
@@ -799,7 +870,6 @@ class WebSocketConroller extends StatelessWidget {
           },
           child: Text('Disconnect'),
         ),
-        Text('Receive: $receiveData'),
       ],
     );
   }
