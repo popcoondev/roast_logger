@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'model.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -20,7 +21,59 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Roast Logger',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        //背景色
+        scaffoldBackgroundColor: const Color.fromARGB(255, 250, 250, 250),
+        // テキストのテーマ
+        textTheme: TextTheme(
+          headlineLarge: GoogleFonts.squadaOne(fontSize: 48, color: const Color.fromARGB(255, 100,100,100)),
+          headlineMedium: GoogleFonts.squadaOne(fontSize: 32, color: const Color.fromARGB(255, 100,100,100)),
+          headlineSmall: GoogleFonts.squadaOne(fontSize: 16, color: const Color.fromARGB(255, 100,100,100)),
+          labelLarge: GoogleFonts.squadaOne(fontSize: 24, color: const Color.fromARGB(255, 100,100,100)),
+          labelMedium: GoogleFonts.squadaOne(fontSize: 18, color: const Color.fromARGB(255, 100,100,100)),
+          labelSmall: GoogleFonts.squadaOne(fontSize: 12, color: const Color.fromARGB(255, 100,100,100)),
+          bodyLarge: GoogleFonts.notoSansJavanese(fontSize: 24, color: const Color.fromARGB(255, 100,100,100)),
+          bodyMedium: GoogleFonts.notoSansJavanese(fontSize: 18, color: const Color.fromARGB(255, 100,100,100)),
+          bodySmall: GoogleFonts.notoSansJavanese(fontSize: 12, color: const Color.fromARGB(255, 100,100,100)),
+        ),
+        // ElevatedButtonのテーマ
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.black, // 背景色
+            foregroundColor: Colors.white, // テキスト色
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0), // 角丸
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 12.0,
+            ),
+          ),
+        ),
+        // TextButtonのテーマ
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.black, // テキスト色
+            padding: EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
+            textStyle: Theme.of(context).textTheme.labelSmall,
+          ),
+        ),
+        // OutlinedButtonのテーマ
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.black, // テキスト色
+            side: BorderSide(color: Colors.black), // 枠線の色
+            padding: EdgeInsets.symmetric(
+              horizontal: 20.0,
+              vertical: 12.0,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+        ),
       ),
       home: const RoastLogger(),
     );
@@ -84,34 +137,121 @@ class _RoastLoggerState extends State<RoastLogger> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Roast Logger'),
+        title: Row(
+          children: [
+            Text(
+              'Roast Logger',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+
+          ],
+        ),
       ),
       body: Container(
         width: double.infinity,
         alignment: Alignment.center,
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: 
+        SingleChildScrollView(child:
+        Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-          // timer display
-            TimerWidget(
-              currentTime: _currentTime,
-              timerState: _timer == null ? 0 : 1,
-              startTimer: _startTimer,
-              stopTimer: _stopTimer,
-              toggleTimer: _toggleTimer,
-              resetTimer: _resetTimer,
+                        // beans info & roast info
+            ComponentsContainer( 
+              labalTitle: 'Beans Info',
+              buttonTitle: 'Edit',
+              buttonAction: () {
+                // edit beans info
+              },
+              child: 
+              Column(
+                children: [
+                  Text('Beans Info', style: Theme.of(context).textTheme.headlineMedium),
+                  Text('Name: ${_roastLog!.beanInfo.name}'),
+                  Text('Origin: ${_roastLog!.beanInfo.origin}'),
+                  Text('Process: ${_roastLog!.beanInfo.process}'),
+                  Text('Roast Info', style: Theme.of(context).textTheme.headlineMedium),
+                  Text('Date: ${_roastLog!.roastInfo.date}'),
+                  Text('Time: ${_roastLog!.roastInfo.time}'),
+                  Text('Roaster: ${_roastLog!.roastInfo.roaster}'),
+                  Text('Pre-Roast Weight: ${_roastLog!.roastInfo.preRoastWeight}g'),
+                  Text('Post-Roast Weight: ${_roastLog!.roastInfo.postRoastWeight}g'),
+                  Text('Roast Time: ${_roastLog!.roastInfo.roastTime}min'),
+                  Text('Roast Level: ${_roastLog!.roastInfo.roastLevelName}'),
+                ],
+              ),
             ),
-            // imput ui
-            InputTemperature(
-              inputTemperature: _inputTemperature,
+            ComponentsContainer( 
+              labalTitle: 'Timer',
+              buttonTitle: 'Data Reset',
+              // buttonAction: _timer == null ? _resetTimer : null,
+              buttonAction: _timer == null ? () async {
+                bool? ret = await _showConfirmDialog(context, 'Reset Data', 'Are you sure you want to reset the data?', 'Reset', 'Cancel');
+                debugPrint('_showConfirmDialog: $ret');
+                if (ret == true) {
+                  debugPrint('_resetTimer');
+                  _resetTimer();
+                }
+              } : null,
+              child: 
+                // timer display
+                  TimerWidget(
+                    currentTime: _currentTime,
+                    timerState: _timer == null ? 0 : 1,
+                    startTimer: _startTimer,
+                    stopTimer: _stopTimer,
+                    toggleTimer: _toggleTimer,
+                    resetTimer: _resetTimer,
+                  ),
             ),
-            InputEvents(
-              addEvent: _addEvent,
+            ComponentsContainer( 
+              labalTitle: 'Input Temperature',
+              buttonTitle: 'Manual/Auto',
+              buttonAction: () async {
+                // change input mode
+                TextEditingController textCtl = TextEditingController(text: '1st crack');
+                Widget child = TextField(
+                  textAlign: TextAlign.start,
+                  decoration: InputDecoration(
+                    hintText: 'edit text test',
+                  ),
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  controller: textCtl,
+                );
+                bool? ret = await _showEditDialog(context, 'Change Input Mode', 'Are you sure you want to change the input mode?', 'SAVE', 'CANCEL', child);
+                debugPrint('_showEditDialog: $ret');
+                if (ret == true) {
+                  //textCtl.textに入力されたテキストが取得できる
+                  debugPrint('text: ${textCtl.text}');                  
+                  
+                }
+                
+              },
+              child: 
+              // imput ui
+              InputTemperature(
+                inputTemperature: _inputTemperature,
+              ),
             ),
-            // timeline grid
-            TimelineGrid(
-              logEntries: _roastLog!.logEntries,
+            ComponentsContainer( 
+              labalTitle: 'Input Phases',
+              child: 
+                // input events
+              InputEvents(
+                addEvent: _addEvent,
+              ),
+            ),
+            ComponentsContainer( 
+              labalTitle: 'Data Summary',
+              buttonTitle: 'Interval',
+              buttonAction: () {
+                // change interval
+              },
+              child:
+              // timeline grid
+              TimelineGrid(
+                logEntries: _roastLog!.logEntries,
+              ),
             ),
             // line chart
             Container(
@@ -147,6 +287,7 @@ class _RoastLoggerState extends State<RoastLogger> {
           ],
         ),
       ),
+    )
     );
   }
 
@@ -277,6 +418,50 @@ class _RoastLoggerState extends State<RoastLogger> {
   }
 }
 
+// このアプリ用のカスタムボタン
+// elevationbuttonを継承して、カスタムボタンを作成
+
+class CustomElevatedButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final Color backgroundColor;
+  final Color textColor;
+  final double borderRadius;
+  final double paddingHorizontal;
+  final double paddingVertical;
+
+  const CustomElevatedButton({
+    Key? key,
+    required this.text,
+    this.onPressed,
+    this.backgroundColor = Colors.blue, // デフォルトの背景色
+    this.textColor = Colors.white,      // デフォルトのテキスト色
+    this.borderRadius = 8.0,            // デフォルトの角丸サイズ
+    this.paddingHorizontal = 16.0,      // デフォルトの左右のパディング
+    this.paddingVertical = 12.0,        // デフォルトの上下のパディング
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor, // 背景色
+        textStyle: TextStyle(color: textColor), // テキスト色
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(borderRadius), // 角丸の形状
+        ),
+        padding: EdgeInsets.symmetric(
+          horizontal: paddingHorizontal, // 横方向のパディング
+          vertical: paddingVertical,     // 縦方向のパディング
+        ),
+      ),
+      child: Text(text),
+    );
+  }
+}
+
+
 class InputEvents extends StatelessWidget {
   final void Function(String event) addEvent;
   const InputEvents({Key? key, required this.addEvent}) : super(key: key);
@@ -288,32 +473,34 @@ class InputEvents extends StatelessWidget {
         // イベントボタンを配置
         // none, maillard, first crack, second crack, drop
         Row(
+          //　等間隔で配置
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            ElevatedButton(
+            OutlinedButton(
               onPressed: () {
                 addEvent(Event.none);
               },
               child: Text(Event.none),
             ),
-            ElevatedButton(
+            OutlinedButton(
               onPressed: () {
                 addEvent(Event.maillard);
               },
               child: Text(Event.maillard),
             ),
-            ElevatedButton(
+            OutlinedButton(
               onPressed: () {
                 addEvent(Event.firstCrack);
               },
               child: Text(Event.firstCrack),
             ),
-            ElevatedButton(
+            OutlinedButton(
               onPressed: () {
                 addEvent(Event.secondCrack);
               },
               child: Text(Event.secondCrack),
             ),
-            ElevatedButton(
+            OutlinedButton(
               onPressed: () {
                 addEvent(Event.drop);
               },
@@ -345,29 +532,76 @@ class TimerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Container(
+      width: double.infinity,
+      child: 
+            Column(
+              //　中央に配置
+              mainAxisAlignment: MainAxisAlignment.center,
+              
+              children: [            
+                TimeLabel(currentTime: currentTime),
+                Row(
+                  //　両端に配置
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    TextButton(
+                      onPressed: timerState == 0 ? startTimer : null,
+                      child: const Text('START'),
+                    ),
+                    TextButton(
+                      onPressed: timerState == 1 ? stopTimer : null,
+                      child: const Text('STOP'),
+                    ),
+                  ],
+                ),
+              ],
+        ),
+    );
+  }
+}
+
+//コンポーネントコンテナ
+//機能ごとにコンポーネントをまとめる枠組み
+class ComponentsContainer extends StatelessWidget {
+  final Widget child;
+  final String labalTitle;
+  final String buttonTitle;
+  final void Function()? buttonAction;
+  const ComponentsContainer({Key? key, required this.child, this.labalTitle = '', this.buttonTitle = '', this.buttonAction}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
       children: [
-        Column(
-          children: [            
-            TimeLabel(currentTime: currentTime),
-            ElevatedButton(
-              onPressed: () {
-                toggleTimer();
-              },
-              child: Text(timerState == 0 ? 'Start' : 'Stop'),
+        //左にタイトルラベルと右にコンポーネント用のボタンを配置するRow
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            //タイトルラベル
+            Text(labalTitle, style: Theme.of(context).textTheme.labelMedium),
+            //コンポーネント用のボタン
+            TextButton(
+              onPressed: buttonAction,
+              child: Text(buttonTitle),
             ),
           ],
         ),
-        ElevatedButton(
-          //timerStateが1の場合は非活性
-          onPressed: timerState == 1 ? null : () {
-            resetTimer();
-          },
-          // timeStateが1の場合は灰色、それ以外は赤色
-          style: ElevatedButton.styleFrom(
-            backgroundColor: timerState == 1 ? Colors.grey : Colors.red,
-          ),
-          child: const Text('Reset'),
+        //メインコンテンツ
+        Container(
+          padding: const EdgeInsets.all(8.0),
+          width: double.infinity,
+          alignment: Alignment.center,
+          child: child,
+        ),
+        //下部に区切り線を表示
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 16.0),
+          //80%の幅に区切り線を表示
+          width: MediaQuery.of(context).size.width * 0.92,
+          height: 2,
+          color: Colors.grey,
+
         ),
       ],
     );
@@ -384,23 +618,15 @@ class TimeLabel extends StatelessWidget {
     // '00:00'形式に変換
     int minutes = currentTime ~/ 60;
     int seconds = currentTime % 60;
-    // return Text('${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}');
     // 大きめのフォントで、時間を表示
     return Container(
       alignment: Alignment.center,
-      padding: const EdgeInsets.all(8.0),
-      // margin: const EdgeInsets.all(8.0),
-      // decoration: BoxDecoration(
-      //   border: Border.all(color: Colors.grey),
-      //   borderRadius: BorderRadius.circular(4.0),
-      // ),
+      // padding: const EdgeInsets.all(8.0),
       child: Text(
         '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-        style: GoogleFonts.roboto(
-          fontSize: 48,
-          fontWeight: FontWeight.bold,
+        style: GoogleFonts.squadaOne(fontSize: 100),
+          
         ),
-      ),
     );
   }
 }
@@ -429,57 +655,66 @@ class _InputTemperatureState extends State<InputTemperature> {
   @override
   Widget build(BuildContext context) {
     // 豆温度の入力エリア
-    return Column(
+    return SizedBox(
+      width: double.infinity,
+      height: 100,
+
+      child:
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // 豆温度の入力エリア
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children:[
-              SizedBox(
-                width: 100,
-                child:
-                  TextField(
+          Row(children: [
+            SizedBox(
+              width: 100,
+              child:
+                TextField(
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Beans Temp',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    textAlign: TextAlign.center,
+                    
+                    decoration: InputDecoration(
+                      // helperText: 'Beans Temp',
+                      // suffixText: '°C',
+                      // ボーダーなし、背景色を指定
+                      border: InputBorder.none,
+                      filled: true,
+                      fillColor: Colors.grey[200],
+
                     ),
+                    style: Theme.of(context).textTheme.bodyLarge,
                     controller: _beansTempController,
-                  ),
+                ),
               ),
-              ToggleButtons(
-                borderColor: Colors.grey,
-                borderWidth: 2,
-                borderRadius: BorderRadius.circular(5.0),
-                selectedBorderColor: Colors.red,
-                onPressed: (index){
-                  if(index == 0){
-                    // 豆温度を上げる
-                    _beansTempController.text = (int.parse(_beansTempController.text) + 1).toString();  
-                  }else{
-                    // 豆温度を下げる
-                    _beansTempController.text = (int.parse(_beansTempController.text) - 1).toString();
-                  }
-                },
-                isSelected: [false,false],
-                children: [
-                  Padding(padding: EdgeInsets.all(4.0), child: Text('▲')),
-                  Padding(padding: EdgeInsets.all(4.0), child: Text('▼')),
-                ],
-                
-              ),  
-              // 温度追加のボタン
-              ElevatedButton(
-                onPressed: () {
-                  // 豆温度を追加
-                  widget.inputTemperature(int.parse(_beansTempController.text));
-                },
-                child: Text('Add'),
-              ),
-            ],
+            Text("°C", style: Theme.of(context).textTheme.bodySmall),
+            //温度を＋１するボタン
+            TextButton(
+              //ボタンの高さを指定
+              onPressed: () {
+                // 豆温度を+1
+                _beansTempController.text = (int.parse(_beansTempController.text) + 1).toString();
+              },
+              child: Text('UP', style: GoogleFonts.abel(fontSize: 24)),
+            ), 
+            // 温度を-1するボタン
+            TextButton(
+              onPressed: () {
+                // 豆温度を-1
+                _beansTempController.text = (int.parse(_beansTempController.text) - 1).toString();
+              },
+              child: Text('DOWN', style: GoogleFonts.abel(fontSize: 24)),
+            ),
+          ],
           ),
-        ],
+            // 温度追加のボタン
+            ElevatedButton(
+              onPressed: () {
+                // 豆温度を追加
+                widget.inputTemperature(int.parse(_beansTempController.text));
+              },
+              child: Text('ADD', style: GoogleFonts.abel(fontSize: 24)),
+            ),
+          ],
+      ),
     );
   }
   
@@ -873,4 +1108,73 @@ class WebSocketConroller extends StatelessWidget {
       ],
     );
   }
+}
+
+// ダイアログを表示するメソッド
+// ダイアログのタイトルとメッセージを表示し、OKボタンを押すとtrue、キャンセルボタンを押すとfalseを返す
+// 呼び出し側はonPressedをasyncで呼び、awaitで結果を受け取る
+Future<bool?> _showConfirmDialog(BuildContext context, String title, String message, String okText, String cancelText) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        //　外枠のRoundedRectangleBorderを設定
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+            child: Text(cancelText),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text(okText),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<bool?> _showEditDialog(BuildContext context, String title, String message, String okText, String cancelText, Widget child) {
+  return showDialog<bool>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(title),
+        content: 
+        Column(
+          children: [
+            Text(message),
+            child,
+          ],
+        ),
+        //　外枠のRoundedRectangleBorderを設定
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+            child: Text(cancelText),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Text(okText),
+          ),
+        ],
+      );
+    },
+  );
 }
