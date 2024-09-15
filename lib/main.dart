@@ -47,6 +47,7 @@ class MyApp extends StatelessWidget {
               horizontal: 20.0,
               vertical: 12.0,
             ),
+            textStyle: Theme.of(context).textTheme.labelSmall,
           ),
         ),
         // TextButtonのテーマ
@@ -66,12 +67,13 @@ class MyApp extends StatelessWidget {
             foregroundColor: Colors.black, // テキスト色
             side: BorderSide(color: Colors.black), // 枠線の色
             padding: EdgeInsets.symmetric(
-              horizontal: 20.0,
+              horizontal: 12.0,
               vertical: 12.0,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8.0),
             ),
+            textStyle: Theme.of(context).textTheme.labelSmall,
           ),
         ),
       ),
@@ -308,6 +310,9 @@ class _RoastLoggerState extends State<RoastLogger> {
         ),
         style: Theme.of(context).textTheme.bodyLarge,
         controller: textCtl,
+        onSubmitted: (value) {
+          FocusScope.of(context).unfocus(); // 「完了」ボタンを押したときにキーボードを閉じる
+        },
       );
       bool? ret = await _showEditDialog(context, 'Change Input Mode', 'Are you sure you want to change the input mode?', 'SAVE', 'CANCEL', child);
       debugPrint('_showEditDialog: $ret');
@@ -541,6 +546,9 @@ class InputEvents extends StatelessWidget {
       children: [
         // イベントボタンを配置
         // none, maillard, first crack, second crack, drop
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child:
         Row(
           //　等間隔で配置
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -576,6 +584,7 @@ class InputEvents extends StatelessWidget {
               child: Text(Event.drop),
             ),
           ],
+        ),
         ),
       ],
     );
@@ -689,6 +698,7 @@ class TimeLabel extends StatelessWidget {
     int seconds = currentTime % 60;
 
     double height = 160;
+    double fontSize = 120;
     // 大きめのフォントで、時間を表示
     return SizedBox(
       width: double.infinity,
@@ -701,7 +711,7 @@ class TimeLabel extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Text(
               '${minutes.toString().padLeft(2, '0')}',
-              style: GoogleFonts.squadaOne(fontSize: 200, height: 0.8),
+              style: GoogleFonts.squadaOne(fontSize: fontSize, height: 0.8),
               
             ),
           ),
@@ -711,7 +721,7 @@ class TimeLabel extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               ':',
-              style: GoogleFonts.squadaOne(fontSize: 160, height: 0.8),
+              style: GoogleFonts.squadaOne(fontSize: fontSize, height: 0.8),
             ),
           ),
           Container(
@@ -720,7 +730,7 @@ class TimeLabel extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '${seconds.toString().padLeft(2, '0')}',
-              style: GoogleFonts.squadaOne(fontSize: 200, height: 0.8),
+              style: GoogleFonts.squadaOne(fontSize: fontSize, height: 0.8),
             ),
           ),
       ],)
@@ -780,6 +790,9 @@ class _InputTemperatureState extends State<InputTemperature> {
                     ),
                     style: Theme.of(context).textTheme.bodyLarge,
                     controller: _beansTempController,
+                    onSubmitted: (value) {
+                      FocusScope.of(context).unfocus(); // 「完了」ボタンを押したときにキーボードを閉じる
+                    },
                 ),
               ),
             Text("°C", style: Theme.of(context).textTheme.bodySmall),
@@ -790,7 +803,7 @@ class _InputTemperatureState extends State<InputTemperature> {
                 // 豆温度を+1
                 _beansTempController.text = (int.parse(_beansTempController.text) + 1).toString();
               },
-              child: Text('UP', style: GoogleFonts.abel(fontSize: 24)),
+              child: Text('UP'),
             ), 
             // 温度を-1するボタン
             TextButton(
@@ -798,7 +811,7 @@ class _InputTemperatureState extends State<InputTemperature> {
                 // 豆温度を-1
                 _beansTempController.text = (int.parse(_beansTempController.text) - 1).toString();
               },
-              child: Text('DOWN', style: GoogleFonts.abel(fontSize: 24)),
+              child: Text('DOWN'),
             ),
           ],
           ),
@@ -808,7 +821,7 @@ class _InputTemperatureState extends State<InputTemperature> {
                 // 豆温度を追加
                 widget.inputTemperature(int.parse(_beansTempController.text));
               },
-              child: Text('ADD', style: GoogleFonts.abel(fontSize: 24)),
+              child: Text('ADD'),
             ),
           ],
       ),
@@ -1256,7 +1269,10 @@ class _WebSocketConrollerState extends State<WebSocketConroller> {
               decoration: InputDecoration(
                 hintText: 'ws://',
               ),
-              controller: urlController
+              controller: urlController,
+              onSubmitted: (value) {
+                FocusScope.of(context).unfocus(); // 「完了」ボタンを押したときにキーボードを閉じる
+              },
             ),
           ),
           // Connect/Disconnectボタン
