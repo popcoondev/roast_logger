@@ -87,9 +87,11 @@ class RoastLogger extends StatefulWidget {
 }
 
 class _RoastLoggerState extends State<RoastLogger> {
-  int _currentTime = 0;
-  int _beansTemp = 0;
-  int _envTemp = 0;
+  int _currentTime = 0; // current time
+  int _beansTemp = 0; // beans temperature
+  int _envTemp = 0; // environment temperature
+  int _interval = 10; // data summary interval
+  int _inputTempMode = 0; // 0: manual, 1: auto
   Timer? _timer;
   RoastLog? _roastLog;
 
@@ -138,12 +140,19 @@ class _RoastLoggerState extends State<RoastLogger> {
     return Scaffold(
       appBar: AppBar(
         title: Row(
+          //左端にタイトル、右端にメニューと設定ボタンを配置
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               'Roast Logger',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-
+            Row(
+              children: [
+              TextButton(onPressed: (){}, child: Text('MENU')),
+              TextButton(onPressed: (){}, child: Text('SETTINGS')),
+              ],
+            ),
           ],
         ),
       ),
@@ -206,31 +215,24 @@ class _RoastLoggerState extends State<RoastLogger> {
             ),
             ComponentsContainer( 
               labalTitle: 'Input Temperature',
-              buttonTitle: 'Manual/Auto',
-              buttonAction: () async {
-                // change input mode
-                TextEditingController textCtl = TextEditingController(text: '1st crack');
-                Widget child = TextField(
-                  textAlign: TextAlign.start,
-                  decoration: InputDecoration(
-                    hintText: 'edit text test',
-                  ),
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  controller: textCtl,
-                );
-                bool? ret = await _showEditDialog(context, 'Change Input Mode', 'Are you sure you want to change the input mode?', 'SAVE', 'CANCEL', child);
-                debugPrint('_showEditDialog: $ret');
+              buttonTitle: 'Change Mode',
+              buttonAction: _timer == null ? () async {
+                bool? ret = await _showConfirmDialog(context, 'Change Input Mode', 'Are you sure you want to change the input mode?\nCurrent mode: ${_inputTempMode == 0 ? 'Manual' : 'Auto'}', 'Change', 'Cancel');
+                debugPrint('_showConfirmDialog: $ret');
                 if (ret == true) {
-                  //textCtl.textに入力されたテキストが取得できる
-                  debugPrint('text: ${textCtl.text}');                  
-                  
+                  setState(() {
+                    _inputTempMode = _inputTempMode == 0 ? 1 : 0;
+                    
+                  });
                 }
-                
-              },
-              child: 
-              // imput ui
+              } : null,
+              child: _inputTempMode == 0 ?
               InputTemperature(
                 inputTemperature: _inputTemperature,
+              ) :
+              WebSocketConroller(
+                inputTemperature: _inputTemperature,
+                updateTempDisplay: _updateTemperture,
               ),
             ),
             ComponentsContainer( 
@@ -243,9 +245,20 @@ class _RoastLoggerState extends State<RoastLogger> {
             ),
             ComponentsContainer( 
               labalTitle: 'Data Summary',
-              buttonTitle: 'Interval',
-              buttonAction: () {
-                // change interval
+              buttonTitle: '${_interval} sec',
+              buttonAction: () async {
+                String? ret = await _showSelectDialog(context, 'Select Interval', 'Select the interval for data summary', ['0 sec', '10 sec', '30 sec', '60 sec', '120 sec']);
+                debugPrint('_showSelectDialog: $ret');
+                if (ret == null) return;
+                if (ret == '0 sec')  _interval = 0;
+                else if (ret == '10 sec') _interval = 10;
+                else if (ret == '30 sec') _interval = 30;
+                else if (ret == '60 sec') _interval = 60;
+                else if (ret == '120 sec') _interval = 120;
+                setState(() {
+                  _updateAll();
+                });
+
               },
               child:
               // timeline grid
@@ -256,10 +269,10 @@ class _RoastLoggerState extends State<RoastLogger> {
             // line chart
             Container(
               //丸角の枠線をつける
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(4.0),
-              ),
+              // decoration: BoxDecoration(
+              //   border: Border.all(color: Colors.grey),
+              //   borderRadius: BorderRadius.circular(4.0),
+              // ),
               padding: const EdgeInsets.all(8.0),
               // margin: const EdgeInsets.all(8.0),
               child: 
@@ -276,14 +289,7 @@ class _RoastLoggerState extends State<RoastLogger> {
                   ],
                 ),
             ),
-            Row(
-              children: [
-                WebSocketConroller(
-                  inputTemperature: _inputTemperature,
-                  updateTemperture: _updateTemperture,
-                ),
-              ],
-            ),
+
           ],
         ),
       ),
@@ -291,6 +297,28 @@ class _RoastLoggerState extends State<RoastLogger> {
     );
   }
 
+  Function editDialogSample(BuildContext context) {
+    return () async {
+      // change input mode
+      TextEditingController textCtl = TextEditingController(text: '1st crack');
+      Widget child = TextField(
+        textAlign: TextAlign.start,
+        decoration: InputDecoration(
+          hintText: 'edit text test',
+        ),
+        style: Theme.of(context).textTheme.bodyLarge,
+        controller: textCtl,
+      );
+      bool? ret = await _showEditDialog(context, 'Change Input Mode', 'Are you sure you want to change the input mode?', 'SAVE', 'CANCEL', child);
+      debugPrint('_showEditDialog: $ret');
+      if (ret == true) {
+        //textCtl.textに入力されたテキストが取得できる
+        debugPrint('text: ${textCtl.text}');                  
+        
+      }
+    };
+
+  }
 
   @override
   void dispose() {
@@ -320,19 +348,60 @@ class _RoastLoggerState extends State<RoastLogger> {
     });
   }
 
-  void _inputTemperature(int temperature) {
+  void _inputTemperature(int temperature, {bool auto = false}) {
     debugPrint('input temperature: $temperature');
     double ror = calcROR(temperature);
     // rorを少数第一位までに丸める
     ror = (ror * 10).round() / 10;
 
-    // input temp
-    _addLogEntry(LogEntry(
-      time: _currentTime,
-      temperature: temperature,
-      ror: ror,
-      event: Event.none,
-    ));
+    // interval check
+    // データサマリー間隔内であれば、上書きする
+    // そうでなければ、新規追加する
+    // intervalが10の場合、前回のtimeが9であれば0として扱う
+    // intervalが10の場合、前回のtimeが10であれば10として扱う
+    int lastTime = _roastLog!.logEntries.isNotEmpty ? _roastLog!.logEntries.last.time : -1;
+    int intervalTime = _currentTime - (_currentTime % _interval);
+
+    debugPrint('_interval: $_interval, lastTime: $lastTime, intervalTime: $intervalTime, currentTime: $_currentTime');
+
+    if (lastTime == intervalTime) {
+      // auto modeの場合、interval毎に最初の値を採用するため、更新はしない
+      if (auto) {
+        return;
+      }
+
+      // update temp
+      _roastLog!.logEntries[_roastLog!.logEntries.length - 1].temperature = temperature;
+      _roastLog!.logEntries[_roastLog!.logEntries.length - 1].ror = ror;
+    } else {
+      // input temp
+      _addLogEntry(LogEntry(
+        time: intervalTime,
+        temperature: temperature,
+        ror: ror,
+        event: Event.none,
+      ));
+    }
+
+    //仮計算
+    // current timeが9の場合、intervalが10の場合、
+    // logEntriesの最後の値が time=0, temperature=100 だとする
+    // この場合、_currentTime=9, _interval=10, lastTime=0, intervalTime=0
+    // この場合、lastTime == intervalTime が成立するので、
+    // logEntriesの最後の値を更新する
+    
+    // current timeが10の場合、intervalが10の場合、
+    // logEntriesの最後の値が time=0, temperature=100 だとする
+    // この場合、_currentTime=10, _interval=10, lastTime=0, intervalTime=10
+    // この場合、lastTime == intervalTime が成立しないので、
+    // 新しい値を追加する
+
+    // current timeが11の場合、intervalが10の場合、
+    // logEntriesの最後の値が time=0, temperature=100 だとする
+    // この場合、_currentTime=11, _interval=10, lastTime=0, intervalTime=10
+    // この場合、lastTime == intervalTime が成立しないので、 
+    // 新しい値を追加する
+
   }
 
   double calcROR(int temperature) {
@@ -599,7 +668,7 @@ class ComponentsContainer extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 16.0),
           //80%の幅に区切り線を表示
           width: MediaQuery.of(context).size.width * 0.92,
-          height: 2,
+          height: 1,
           color: Colors.grey,
 
         ),
@@ -618,15 +687,43 @@ class TimeLabel extends StatelessWidget {
     // '00:00'形式に変換
     int minutes = currentTime ~/ 60;
     int seconds = currentTime % 60;
+
+    double height = 160;
     // 大きめのフォントで、時間を表示
-    return Container(
-      alignment: Alignment.center,
-      // padding: const EdgeInsets.all(8.0),
-      child: Text(
-        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}',
-        style: GoogleFonts.squadaOne(fontSize: 100),
-          
-        ),
+    return SizedBox(
+      width: double.infinity,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(            
+            height: height,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Text(
+              '${minutes.toString().padLeft(2, '0')}',
+              style: GoogleFonts.squadaOne(fontSize: 200, height: 0.8),
+              
+            ),
+          ),
+          Container(
+            height: height,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            alignment: Alignment.center,
+            child: Text(
+              ':',
+              style: GoogleFonts.squadaOne(fontSize: 160, height: 0.8),
+            ),
+          ),
+          Container(
+            height: height,
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            alignment: Alignment.center,
+            child: Text(
+              '${seconds.toString().padLeft(2, '0')}',
+              style: GoogleFonts.squadaOne(fontSize: 200, height: 0.8),
+            ),
+          ),
+      ],)
     );
   }
 }
@@ -758,9 +855,14 @@ class TimelineGridItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(8.0),
       margin: const EdgeInsets.all(2.0),
+      // decoration: BoxDecoration(
+      //   //背景色を指定
+      //   color: Colors.grey[300],
+      //   borderRadius: BorderRadius.circular(4.0),
+      // ),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
-        borderRadius: BorderRadius.circular(4.0),
+        //右側に線を引く
+        border: Border(right: BorderSide(color: Colors.grey.withOpacity(0.5))),
       ),
       child:
         Column(
@@ -772,10 +874,49 @@ class TimelineGridItem extends StatelessWidget {
           Text('${entry.time ~/ 60}:${(entry.time % 60).toString().padLeft(2, '0')}'),
           Text('${entry.temperature}'),
           Text('${entry.ror}'),
-          Text('${entry.event}'),
+          getPhaseLabel(entry.event),
         ],
       )
     ); 
+  }
+
+  Widget getPhaseLabel(String? event) {
+    Color color = Colors.black;
+    if (event == null) return Container();
+    
+    switch (event) {
+      case Event.maillard:
+        color = Colors.green;
+        break; 
+      case Event.firstCrack:
+        color = Colors.orange;
+        break;
+      case Event.secondCrack:
+        color = Colors.red;
+        break;
+      case Event.drop:
+        color = Colors.blue;
+        break;
+      default :
+        color = Colors.black;
+        return Container(
+              height: 20,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.all(4.0),
+              child: Text('-', style: TextStyle(color: Colors.black, fontSize: 10), textAlign: TextAlign.center),
+            );
+    }
+
+    return Container(
+              height: 20,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.all(4.0),
+              decoration: BoxDecoration(
+                border: Border.all(color: color),
+                borderRadius: BorderRadius.circular(4.0),
+              ),
+              child: Text(event, style: TextStyle(color: color, fontSize: 10), textAlign: TextAlign.center),
+            );
   }
 }
 
@@ -873,7 +1014,7 @@ class ChartDisplay extends StatelessWidget {
               ),
               minX: 0,
               maxX: temperatureSpots!.last.x,
-              minY: 80,
+              minY: 0,
               maxY: 280, // 温度グラフの最大値
               lineBarsData: [
                 LineChartBarData(
@@ -1004,6 +1145,7 @@ class TempDisplay extends StatelessWidget {
     // 豆温度が200度を超えたら赤色にする
     // 'BT: 200.0℃'という枠、'ET: 30.0℃'という枠を表示
     return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.all(8.0),
@@ -1014,10 +1156,7 @@ class TempDisplay extends StatelessWidget {
               // ),
               child: Text( //00.0℃の形式に変更
                 'BT: ${beansTemp.toStringAsFixed(1)}℃',
-                style: TextStyle(
-                  fontSize: 24,
-                  color: beansTemp > 200 ? Colors.red : Colors.black,
-                ),
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
             ),
             Container(
@@ -1029,10 +1168,7 @@ class TempDisplay extends StatelessWidget {
               // ),
               child: Text(
                 'ET: ${envTemp.toStringAsFixed(1)}℃',
-                style: const TextStyle(
-                  fontSize: 24,
-                  color: Colors.black,
-                ),
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
             ),
           ],
@@ -1040,72 +1176,112 @@ class TempDisplay extends StatelessWidget {
   }
 }
 
-class WebSocketConroller extends StatelessWidget {
-  final void Function(int temperature) inputTemperature;
-  final void Function(int beansTemp, int envTemp) updateTemperture;
-  WebSocketConroller({Key? key, required this.inputTemperature, required this.updateTemperture}) : super(key: key);
+class WebSocketConroller extends StatefulWidget {
+  final void Function(int temperature, {bool auto}) inputTemperature;
+  final void Function(int beansTemp, int envTemp) updateTempDisplay;
 
-  WebSocketChannel? _channel;
-  String receiveData = '';
   
+  WebSocketConroller({Key? key, required this.inputTemperature, required this.updateTempDisplay}) : super(key: key);
+
+  @override
+  State<WebSocketConroller> createState() => _WebSocketConrollerState();
+}
+
+class _WebSocketConrollerState extends State<WebSocketConroller> {
+  WebSocketChannel? _channel;
+  String _receiveData = 'disconnected';
+  String _url = 'ws://192.168.11.51:81';
 
   @override
   void initState() {
-    
+    super.initState();
+    _channel = null;
   }
 
-  startConnection() {
+  Future<void> startConnection(String url) async {
     // connect to websocket
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.11.51:81'),
+      Uri.parse(url),
     );
-    debugPrint('connecting...');
-    setState() {
-      receiveData = 'connecting...';
-    }
-    _channel!.stream.listen((event) {
-      debugPrint(event);
-      // receive data 
+    updateReceiveData('connecting...');
+    await _channel!.ready;
+    // listen to websocket
+    try {
+      _channel!.stream.listen((event) {
         Map<String, dynamic> temps = jsonDecode(event);
-        receiveData = temps['BT'].toString();
-        
-        // { "BT": 26.75, "ET": 28.38 }形式
-        // debugPrint("__" + receiveData);
-        
-        updateTemperture(temps['BT'].toInt(), temps['ET'].toInt());
-        inputTemperature(temps['BT'].toInt());
-    });
+        widget.updateTempDisplay(temps['BT'].toInt(), temps['ET'].toInt());
+        widget.inputTemperature(temps['BT'].toInt(), auto: true);
+      }, onError: (e) {
+        _channel = null;
+        updateReceiveData('error');
+      }, onDone: () {
+        _channel = null;
+        updateReceiveData('disconnected');
+      }, cancelOnError: true
+      
+      );
+    } catch (e) {
+      updateReceiveData('connection error');
+      debugPrint('WebSocketChannelException: $e');
+    }
+
+    updateReceiveData('connected');
+
   }
 
-  stopConnection() {
+  void stopConnection() {
     // disconnect from websocket
-    _channel!.sink.close();
-    debugPrint('disconnected');
-    setState() {
-      receiveData = 'disconnected';
-    }
+    _channel?.sink.close();
+    _channel = null;
+    updateReceiveData('disconnected');
+  }
+
+  void updateReceiveData(String data) {
+    setState(() {
+      _receiveData = data;
+      debugPrint('receiveData: $_receiveData');
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        ElevatedButton(
-          onPressed: () {
-            // connect to websocket
-            startConnection();
-            
-          },
-          child: Text('Connect'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            // disconnect from websocket
-            stopConnection();
-          },
-          child: Text('Disconnect'),
-        ),
-      ],
+    TextEditingController urlController = TextEditingController(text: _url);
+
+    return Column( children: [
+      Row(
+        children: [
+          // 接続先を編集するTextField
+          Expanded(
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'ws://',
+              ),
+              controller: urlController
+            ),
+          ),
+          // Connect/Disconnectボタン
+          
+            ElevatedButton(
+              onPressed: () {
+                // connect to websocket
+                String url = urlController.text;
+                debugPrint('start url: $url');
+                startConnection(url);
+              },
+              child: const Text('Connect'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // disconnect from websocket
+                stopConnection();
+              },
+              child: const Text('Disconnect'),
+            ),
+        ],
+      ),
+    // 接続状態を表示するText
+    Text(_receiveData),
+    ],
     );
   }
 }
@@ -1137,6 +1313,36 @@ Future<bool?> _showConfirmDialog(BuildContext context, String title, String mess
             },
             child: Text(okText),
           ),
+        ],
+      );
+    },
+  );
+}
+
+//_showSelectDialog
+// ダイアログを表示するメソッド
+// ダイアログのタイトルとメッセージを表示し、選択肢をリストで表示する
+// 選択肢の中から選択したものを返す
+// 呼び出し側はonPressedをasyncで呼び、awaitで結果を受け取る
+Future<String?> _showSelectDialog(BuildContext context, String title, String message, List<String> choices) {
+  return showDialog<String>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        //　外枠のRoundedRectangleBorderを設定
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        actions: [
+          for (var choice in choices)
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(choice);
+              },
+              child: Text(choice),
+            ),
         ],
       );
     },

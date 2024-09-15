@@ -1,8 +1,8 @@
 
 class LogEntry {
   final int time;
-  final int temperature;
-  final double? ror;
+  int temperature;
+  double? ror;
   String? event;
 
   LogEntry({
