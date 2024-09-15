@@ -5,6 +5,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'model.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -99,142 +100,146 @@ class _RoastLoggerState extends State<RoastLogger> {
           TextButton(onPressed: () {}, child: const Text('SETTINGS')),
         ],
       ),
-      body: Container(
-        width: double.infinity,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              // Beans info & roast info
-              ComponentsContainer(
-                labelTitle: 'Beans Info',
-                buttonTitle: 'Edit',
-                buttonAction: () {
-                  // Edit beans info
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Beans Info', style: Theme.of(context).textTheme.titleLarge),
-                    Text('Name: ${_roastLog!.beanInfo.name}'),
-                    Text('Origin: ${_roastLog!.beanInfo.origin}'),
-                    Text('Process: ${_roastLog!.beanInfo.process}'),
-                    const SizedBox(height: 16),
-                    Text('Roast Info', style: Theme.of(context).textTheme.titleLarge),
-                    Text('Date: ${_roastLog!.roastInfo.date}'),
-                    Text('Time: ${_roastLog!.roastInfo.time}'),
-                    Text('Roaster: ${_roastLog!.roastInfo.roaster}'),
-                    Text('Pre-Roast Weight: ${_roastLog!.roastInfo.preRoastWeight}g'),
-                    Text('Post-Roast Weight: ${_roastLog!.roastInfo.postRoastWeight}g'),
-                    Text('Roast Time: ${_roastLog!.roastInfo.roastTime}min'),
-                    Text('Roast Level: ${_roastLog!.roastInfo.roastLevelName}'),
-                  ],
-                ),
-              ),
-              ComponentsContainer(
-                labelTitle: 'Timer',
-                buttonTitle: 'Data Reset',
-                buttonAction: _timer == null
-                    ? () async {
-                        bool? ret = await _showConfirmDialog(
-                            context, 'Reset Data', 'Are you sure you want to reset the data?', 'Reset', 'Cancel');
-                        if (ret == true) {
-                          _resetTimer();
-                        }
-                      }
-                    : null,
-                child: TimerWidget(
-                  currentTime: _currentTime,
-                  timerState: _timer == null ? 0 : 1,
-                  startTimer: _startTimer,
-                  stopTimer: _stopTimer,
-                ),
-              ),
-              ComponentsContainer(
-                labelTitle: 'Input Temperature',
-                buttonTitle: _inputTempMode == 0 ? 'Switch to Auto' : 'Switch to Manual',
-                buttonAction: _timer == null
-                    ? () async {
-                        bool? ret = await _showConfirmDialog(
-                            context,
-                            'Change Input Mode',
-                            'Are you sure you want to change the input mode?\nCurrent mode: ${_inputTempMode == 0 ? 'Manual' : 'Auto'}',
-                            'Change',
-                            'Cancel');
-                        if (ret == true) {
-                          setState(() {
-                            _inputTempMode = _inputTempMode == 0 ? 1 : 0;
-                          });
-                        }
-                      }
-                    : null,
-                child: _inputTempMode == 0
-                    ? InputTemperature(
-                        inputTemperature: _inputTemperature,
-                      )
-                    : WebSocketController(
-                        inputTemperature: _inputTemperature,
-                        updateTempDisplay: _updateTemperture,
-                      ),
-              ),
-              ComponentsContainer(
-                labelTitle: 'Input Phases',
-                child: InputEvents(
-                  addEvent: _addEvent,
-                ),
-              ),
-              ComponentsContainer(
-                labelTitle: 'Data Summary',
-                buttonTitle: '${_interval} sec',
-                buttonAction: () async {
-                  String? ret = await _showSelectDialog(context, 'Select Interval', 'Select the interval for data summary',
-                      ['0 sec', '10 sec', '30 sec', '60 sec', '120 sec']);
-                  if (ret == null) return;
-                  setState(() {
-                    switch (ret) {
-                      case '0 sec':
-                        _interval = 0;
-                        break;
-                      case '10 sec':
-                        _interval = 10;
-                        break;
-                      case '30 sec':
-                        _interval = 30;
-                        break;
-                      case '60 sec':
-                        _interval = 60;
-                        break;
-                      case '120 sec':
-                        _interval = 120;
-                        break;
-                    }
-                    _updateAll();
-                  });
-                },
-                child: TimelineGrid(
-                  logEntries: _roastLog!.logEntries,
-                ),
-              ),
-              // Line chart
-              Container(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    // Temp display
-                    TempDisplay(
-                      beansTemp: _beansTemp,
-                      envTemp: _envTemp,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Container(
+            width: double.infinity,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(16.0),
+            child: SingleChildScrollView(
+              child: Column(
+                children: <Widget>[
+                  // Beans info & roast info
+                  ComponentsContainer(
+                    labelTitle: 'Beans Info',
+                    buttonTitle: 'Edit',
+                    buttonAction: () {
+                      // Edit beans info
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Beans Info', style: Theme.of(context).textTheme.titleLarge),
+                        Text('Name: ${_roastLog!.beanInfo.name}'),
+                        Text('Origin: ${_roastLog!.beanInfo.origin}'),
+                        Text('Process: ${_roastLog!.beanInfo.process}'),
+                        const SizedBox(height: 16),
+                        Text('Roast Info', style: Theme.of(context).textTheme.titleLarge),
+                        Text('Date: ${_roastLog!.roastInfo.date}'),
+                        Text('Time: ${_roastLog!.roastInfo.time}'),
+                        Text('Roaster: ${_roastLog!.roastInfo.roaster}'),
+                        Text('Pre-Roast Weight: ${_roastLog!.roastInfo.preRoastWeight}g'),
+                        Text('Post-Roast Weight: ${_roastLog!.roastInfo.postRoastWeight}g'),
+                        Text('Roast Time: ${_roastLog!.roastInfo.roastTime}min'),
+                        Text('Roast Level: ${_roastLog!.roastInfo.roastLevelName}'),
+                      ],
                     ),
-                    ChartDisplay(
+                  ),
+                  ComponentsContainer(
+                    labelTitle: 'Timer',
+                    buttonTitle: 'Data Reset',
+                    buttonAction: _timer == null
+                        ? () async {
+                            bool? ret = await _showConfirmDialog(
+                                context, 'Reset Data', 'Are you sure you want to reset the data?', 'Reset', 'Cancel');
+                            if (ret == true) {
+                              _resetTimer();
+                            }
+                          }
+                        : null,
+                    child: TimerWidget(
+                      currentTime: _currentTime,
+                      timerState: _timer == null ? 0 : 1,
+                      startTimer: _startTimer,
+                      stopTimer: _stopTimer,
+                    ),
+                  ),
+                  ComponentsContainer(
+                    labelTitle: 'Input Temperature',
+                    buttonTitle: _inputTempMode == 0 ? 'Switch to Auto' : 'Switch to Manual',
+                    buttonAction: _timer == null
+                        ? () async {
+                            bool? ret = await _showConfirmDialog(
+                                context,
+                                'Change Input Mode',
+                                'Are you sure you want to change the input mode?\nCurrent mode: ${_inputTempMode == 0 ? 'Manual' : 'Auto'}',
+                                'Change',
+                                'Cancel');
+                            if (ret == true) {
+                              setState(() {
+                                _inputTempMode = _inputTempMode == 0 ? 1 : 0;
+                              });
+                            }
+                          }
+                        : null,
+                    child: _inputTempMode == 0
+                        ? InputTemperature(
+                            inputTemperature: _inputTemperature,
+                          )
+                        : WebSocketController(
+                            inputTemperature: _inputTemperature,
+                            updateTempDisplay: _updateTemperture,
+                          ),
+                  ),
+                  ComponentsContainer(
+                    labelTitle: 'Input Phases',
+                    child: InputEvents(
+                      addEvent: _addEvent,
+                    ),
+                  ),
+                  ComponentsContainer(
+                    labelTitle: 'Data Summary',
+                    buttonTitle: '${_interval} sec',
+                    buttonAction: () async {
+                      String? ret = await _showSelectDialog(context, 'Select Interval', 'Select the interval for data summary',
+                          ['0 sec', '10 sec', '30 sec', '60 sec', '120 sec']);
+                      if (ret == null) return;
+                      setState(() {
+                        switch (ret) {
+                          case '0 sec':
+                            _interval = 0;
+                            break;
+                          case '10 sec':
+                            _interval = 10;
+                            break;
+                          case '30 sec':
+                            _interval = 30;
+                            break;
+                          case '60 sec':
+                            _interval = 60;
+                            break;
+                          case '120 sec':
+                            _interval = 120;
+                            break;
+                        }
+                        _updateAll();
+                      });
+                    },
+                    child: TimelineGrid(
                       logEntries: _roastLog!.logEntries,
                     ),
-                  ],
-                ),
+                  ),
+                  // Line chart
+                  ComponentsContainer(
+                    labelTitle: 'Temperature Charts',
+                    child: Column(
+                      children: [
+                        // Temp display
+                        TempDisplay(
+                          beansTemp: _beansTemp,
+                          envTemp: _envTemp,
+                        ),
+                        ChartDisplay(
+                          logEntries: _roastLog!.logEntries,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -477,6 +482,32 @@ class _InputTemperatureState extends State<InputTemperature> {
           },
         ),
         const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  int temp = int.parse(_beansTempController.text);
+                  temp++;
+                  _beansTempController.text = temp.toString();
+                });
+              },
+              child: const Icon(Icons.arrow_upward),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  int temp = int.parse(_beansTempController.text);
+                  temp--;
+                  _beansTempController.text = temp.toString();
+                });
+              },
+              child: const Icon(Icons.arrow_downward),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         ElevatedButton(
           onPressed: () {
             widget.inputTemperature(int.parse(_beansTempController.text));
@@ -500,7 +531,7 @@ class InputEvents extends StatelessWidget {
       children: [
         OutlinedButton(
           onPressed: () => addEvent(Event.none),
-          child: const Text(Event.none),
+          child: const Text('-'),
         ),
         OutlinedButton(
           onPressed: () => addEvent(Event.maillard),
@@ -525,7 +556,7 @@ class InputEvents extends StatelessWidget {
 
 // Event constants
 class Event {
-  static const String none = 'None';
+  static const String none = '-';
   static const String maillard = 'Maillard';
   static const String firstCrack = '1st Crack';
   static const String secondCrack = '2nd Crack';
@@ -539,21 +570,26 @@ class TimelineGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Adjust column widths based on screen size
+    double columnWidth = MediaQuery.of(context).size.width / 5;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
-        columns: const [
-          DataColumn(label: Text('Time')),
-          DataColumn(label: Text('Temp (°C)')),
-          DataColumn(label: Text('ROR')),
-          DataColumn(label: Text('Event')),
+        columnSpacing: 16.0,
+        columns: [
+          DataColumn(label: SizedBox(width: columnWidth, child: const Text('Time'))),
+          DataColumn(label: SizedBox(width: columnWidth, child: const Text('Temp (°C)'))),
+          DataColumn(label: SizedBox(width: columnWidth, child: const Text('ROR'))),
+          DataColumn(label: SizedBox(width: columnWidth, child: const Text('Phase'))),
         ],
         rows: logEntries.map((entry) {
+          String eventDisplay = entry.event == Event.none ? '-' : entry.event!;
           return DataRow(cells: [
             DataCell(Text('${entry.time ~/ 60}:${(entry.time % 60).toString().padLeft(2, '0')}')),
             DataCell(Text('${entry.temperature}')),
             DataCell(Text('${entry.ror}')),
-            DataCell(Text(entry.event ?? '-')),
+            DataCell(Text(eventDisplay)),
           ]);
         }).toList(),
       ),
