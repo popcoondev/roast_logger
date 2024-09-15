@@ -2,10 +2,72 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'model.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
+
+// Model classes
+class BeanInfo {
+  String name;
+  String origin;
+  String process;
+
+  BeanInfo({
+    required this.name,
+    required this.origin,
+    required this.process,
+  });
+}
+
+class RoastInfo {
+  String date;
+  String time;
+  String roaster;
+  String preRoastWeight;
+  String postRoastWeight;
+  String roastTime;
+  double roastLevel;
+  String roastLevelName;
+
+  RoastInfo({
+    required this.date,
+    required this.time,
+    required this.roaster,
+    required this.preRoastWeight,
+    required this.postRoastWeight,
+    required this.roastTime,
+    required this.roastLevel,
+    required this.roastLevelName,
+  });
+}
+
+class LogEntry {
+  int time;
+  int temperature;
+  double? ror;
+  String? event;
+
+  LogEntry({
+    required this.time,
+    required this.temperature,
+    this.ror,
+    this.event,
+  });
+}
+
+class RoastLog {
+  List<LogEntry> logEntries;
+  int currentTime;
+  BeanInfo beanInfo;
+  RoastInfo roastInfo;
+
+  RoastLog({
+    required this.logEntries,
+    required this.currentTime,
+    required this.beanInfo,
+    required this.roastInfo,
+  });
+}
 
 void main() {
   runApp(const MyApp());
@@ -89,6 +151,7 @@ class _RoastLoggerState extends State<RoastLogger> {
 
   @override
   Widget build(BuildContext context) {
+    var isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -102,14 +165,173 @@ class _RoastLoggerState extends State<RoastLogger> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          return Container(
-            width: double.infinity,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.all(16.0),
-            child: SingleChildScrollView(
+          if (isLandscape) {
+            // Landscape layout with three columns
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left column: Beans Info card
+                Expanded(
+                  flex: 1,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        ComponentsContainer(
+                          labelTitle: 'Beans Info',
+                          buttonTitle: 'Edit',
+                          buttonAction: () {
+                            // Edit beans info
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Beans Info', style: Theme.of(context).textTheme.titleLarge),
+                              Text('Name: ${_roastLog!.beanInfo.name}'),
+                              Text('Origin: ${_roastLog!.beanInfo.origin}'),
+                              Text('Process: ${_roastLog!.beanInfo.process}'),
+                              const SizedBox(height: 16),
+                              Text('Roast Info', style: Theme.of(context).textTheme.titleLarge),
+                              Text('Date: ${_roastLog!.roastInfo.date}'),
+                              Text('Time: ${_roastLog!.roastInfo.time}'),
+                              Text('Roaster: ${_roastLog!.roastInfo.roaster}'),
+                              Text('Pre-Roast Weight: ${_roastLog!.roastInfo.preRoastWeight}g'),
+                              Text('Post-Roast Weight: ${_roastLog!.roastInfo.postRoastWeight}g'),
+                              Text('Roast Time: ${_roastLog!.roastInfo.roastTime}min'),
+                              Text('Roast Level: ${_roastLog!.roastInfo.roastLevelName}'),
+                            ],
+                          ),
+                        ),
+                        ComponentsContainer(
+                          labelTitle: 'Timer',
+                          buttonTitle: 'Data Reset',
+                          buttonAction: _timer == null
+                              ? () async {
+                                  bool? ret = await _showConfirmDialog(
+                                      context, 'Reset Data', 'Are you sure you want to reset the data?', 'Reset', 'Cancel');
+                                  if (ret == true) {
+                                    _resetTimer();
+                                  }
+                                }
+                              : null,
+                          child: TimerWidget(
+                            currentTime: _currentTime,
+                            timerState: _timer == null ? 0 : 1,
+                            startTimer: _startTimer,
+                            stopTimer: _stopTimer,
+                          ),
+                        ),
+                        ComponentsContainer(
+                          labelTitle: 'Input Temperature',
+                          buttonTitle: _inputTempMode == 0 ? 'Switch to Auto' : 'Switch to Manual',
+                          buttonAction: _timer == null
+                              ? () async {
+                                  bool? ret = await _showConfirmDialog(
+                                      context,
+                                      'Change Input Mode',
+                                      'Are you sure you want to change the input mode?\nCurrent mode: ${_inputTempMode == 0 ? 'Manual' : 'Auto'}',
+                                      'Change',
+                                      'Cancel');
+                                  if (ret == true) {
+                                    setState(() {
+                                      _inputTempMode = _inputTempMode == 0 ? 1 : 0;
+                                    });
+                                  }
+                                }
+                              : null,
+                          child: _inputTempMode == 0
+                              ? InputTemperature(
+                                  inputTemperature: _inputTemperature,
+                                )
+                              : WebSocketController(
+                                  inputTemperature: _inputTemperature,
+                                  updateTempDisplay: _updateTemperture,
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Center column: Timer, Input Temp, Input Phases
+                Expanded(
+                  flex: 1,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        
+                        ComponentsContainer(
+                          labelTitle: 'Input Phases',
+                          child: InputEvents(
+                            addEvent: _addEvent,
+                          ),
+                        ),
+                        ComponentsContainer(
+                          labelTitle: 'Data Summary',
+                          buttonTitle: '${_interval} sec',
+                          buttonAction: () async {
+                            String? ret = await _showSelectDialog(
+                                context, 'Select Interval', 'Select the interval for data summary', ['0 sec', '10 sec', '30 sec', '60 sec', '120 sec']);
+                            if (ret == null) return;
+                            setState(() {
+                              switch (ret) {
+                                case '0 sec':
+                                  _interval = 0;
+                                  break;
+                                case '10 sec':
+                                  _interval = 10;
+                                  break;
+                                case '30 sec':
+                                  _interval = 30;
+                                  break;
+                                case '60 sec':
+                                  _interval = 60;
+                                  break;
+                                case '120 sec':
+                                  _interval = 120;
+                                  break;
+                              }
+                              _updateAll();
+                            });
+                          },
+                          child: TimelineGrid(
+                            logEntries: _roastLog!.logEntries,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Right column: Data Summary, Temperature Charts
+                Expanded(
+                  flex: 1,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        ComponentsContainer(
+                          labelTitle: 'Temperature Charts',
+                          child: Column(
+                            children: [
+                              // Temp display
+                              TempDisplay(
+                                beansTemp: _beansTemp,
+                                envTemp: _envTemp,
+                              ),
+                              ChartDisplay(
+                                logEntries: _roastLog!.logEntries,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          } else {
+            // Portrait layout
+            return SingleChildScrollView(
               child: Column(
                 children: <Widget>[
-                  // Beans info & roast info
                   ComponentsContainer(
                     labelTitle: 'Beans Info',
                     buttonTitle: 'Edit',
@@ -191,8 +413,8 @@ class _RoastLoggerState extends State<RoastLogger> {
                     labelTitle: 'Data Summary',
                     buttonTitle: '${_interval} sec',
                     buttonAction: () async {
-                      String? ret = await _showSelectDialog(context, 'Select Interval', 'Select the interval for data summary',
-                          ['0 sec', '10 sec', '30 sec', '60 sec', '120 sec']);
+                      String? ret = await _showSelectDialog(
+                          context, 'Select Interval', 'Select the interval for data summary', ['0 sec', '10 sec', '30 sec', '60 sec', '120 sec']);
                       if (ret == null) return;
                       setState(() {
                         switch (ret) {
@@ -219,7 +441,6 @@ class _RoastLoggerState extends State<RoastLogger> {
                       logEntries: _roastLog!.logEntries,
                     ),
                   ),
-                  // Line chart
                   ComponentsContainer(
                     labelTitle: 'Temperature Charts',
                     child: Column(
@@ -237,8 +458,8 @@ class _RoastLoggerState extends State<RoastLogger> {
                   ),
                 ],
               ),
-            ),
-          );
+            );
+          }
         },
       ),
     );
@@ -362,7 +583,7 @@ class ComponentsContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
       elevation: 1,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -570,12 +791,21 @@ class TimelineGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Adjust column widths based on screen size
+    // Adjust column widths based on card size
     double columnWidth = MediaQuery.of(context).size.width / 5;
 
-    return SingleChildScrollView(
+    return 
+    Container(
+      height: 400,
+      child:  
+    SingleChildScrollView(
+      scrollDirection: Axis.vertical,
+      
+      child: 
+    SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: DataTable(
+      child: 
+      DataTable(
         columnSpacing: 16.0,
         columns: [
           DataColumn(label: SizedBox(width: columnWidth, child: const Text('Time'))),
@@ -593,6 +823,8 @@ class TimelineGrid extends StatelessWidget {
           ]);
         }).toList(),
       ),
+    )
+    ),
     );
   }
 }
@@ -629,7 +861,7 @@ class ChartDisplay extends StatelessWidget {
 
   List<FlSpot> _getRorSpots() {
     return logEntries.map((entry) {
-      return FlSpot(entry.time.toDouble(), entry.ror!.toDouble());
+      return FlSpot(entry.time.toDouble(), entry.ror ?? 0);
     }).toList();
   }
 
