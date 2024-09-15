@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter/services.dart';
 
 // Model classes
 class BeanInfo {
@@ -170,7 +169,7 @@ class _RoastLoggerState extends State<RoastLogger> {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left column: Beans Info card
+                // Left column: Beans Info card and Roast Info card
                 Expanded(
                   flex: 1,
                   child: SingleChildScrollView(
@@ -180,26 +179,17 @@ class _RoastLoggerState extends State<RoastLogger> {
                           labelTitle: 'Beans Info',
                           buttonTitle: 'Edit',
                           buttonAction: () {
-                            // Edit beans info
+                            _editBeanInfo(context);
                           },
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Beans Info', style: Theme.of(context).textTheme.titleLarge),
-                              Text('Name: ${_roastLog!.beanInfo.name}'),
-                              Text('Origin: ${_roastLog!.beanInfo.origin}'),
-                              Text('Process: ${_roastLog!.beanInfo.process}'),
-                              const SizedBox(height: 16),
-                              Text('Roast Info', style: Theme.of(context).textTheme.titleLarge),
-                              Text('Date: ${_roastLog!.roastInfo.date}'),
-                              Text('Time: ${_roastLog!.roastInfo.time}'),
-                              Text('Roaster: ${_roastLog!.roastInfo.roaster}'),
-                              Text('Pre-Roast Weight: ${_roastLog!.roastInfo.preRoastWeight}g'),
-                              Text('Post-Roast Weight: ${_roastLog!.roastInfo.postRoastWeight}g'),
-                              Text('Roast Time: ${_roastLog!.roastInfo.roastTime}min'),
-                              Text('Roast Level: ${_roastLog!.roastInfo.roastLevelName}'),
-                            ],
-                          ),
+                          child: BeanInfoWidget(beanInfo: _roastLog!.beanInfo),
+                        ),
+                        ComponentsContainer(
+                          labelTitle: 'Roast Info',
+                          buttonTitle: 'Edit',
+                          buttonAction: () {
+                            _editRoastInfo(context);
+                          },
+                          child: RoastInfoWidget(roastInfo: _roastLog!.roastInfo),
                         ),
                         ComponentsContainer(
                           labelTitle: 'Timer',
@@ -257,7 +247,6 @@ class _RoastLoggerState extends State<RoastLogger> {
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        
                         ComponentsContainer(
                           labelTitle: 'Input Phases',
                           child: InputEvents(
@@ -336,26 +325,17 @@ class _RoastLoggerState extends State<RoastLogger> {
                     labelTitle: 'Beans Info',
                     buttonTitle: 'Edit',
                     buttonAction: () {
-                      // Edit beans info
+                      _editBeanInfo(context);
                     },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Beans Info', style: Theme.of(context).textTheme.titleLarge),
-                        Text('Name: ${_roastLog!.beanInfo.name}'),
-                        Text('Origin: ${_roastLog!.beanInfo.origin}'),
-                        Text('Process: ${_roastLog!.beanInfo.process}'),
-                        const SizedBox(height: 16),
-                        Text('Roast Info', style: Theme.of(context).textTheme.titleLarge),
-                        Text('Date: ${_roastLog!.roastInfo.date}'),
-                        Text('Time: ${_roastLog!.roastInfo.time}'),
-                        Text('Roaster: ${_roastLog!.roastInfo.roaster}'),
-                        Text('Pre-Roast Weight: ${_roastLog!.roastInfo.preRoastWeight}g'),
-                        Text('Post-Roast Weight: ${_roastLog!.roastInfo.postRoastWeight}g'),
-                        Text('Roast Time: ${_roastLog!.roastInfo.roastTime}min'),
-                        Text('Roast Level: ${_roastLog!.roastInfo.roastLevelName}'),
-                      ],
-                    ),
+                    child: BeanInfoWidget(beanInfo: _roastLog!.beanInfo),
+                  ),
+                  ComponentsContainer(
+                    labelTitle: 'Roast Info',
+                    buttonTitle: 'Edit',
+                    buttonAction: () {
+                      _editRoastInfo(context);
+                    },
+                    child: RoastInfoWidget(roastInfo: _roastLog!.roastInfo),
                   ),
                   ComponentsContainer(
                     labelTitle: 'Timer',
@@ -563,6 +543,82 @@ class _RoastLoggerState extends State<RoastLogger> {
       _roastLog?.logEntries.clear();
       _updateAll();
     });
+  }
+
+  // Edit Bean Info Dialog
+  void _editBeanInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return BeanInfoDialog(
+          beanInfo: _roastLog!.beanInfo,
+          onSave: (BeanInfo updatedBeanInfo) {
+            setState(() {
+              _roastLog!.beanInfo = updatedBeanInfo;
+            });
+          },
+        );
+      },
+    );
+  }
+
+  // Edit Roast Info Dialog
+  void _editRoastInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return RoastInfoDialog(
+          roastInfo: _roastLog!.roastInfo,
+          onSave: (RoastInfo updatedRoastInfo) {
+            setState(() {
+              _roastLog!.roastInfo = updatedRoastInfo;
+            });
+          },
+        );
+      },
+    );
+  }
+}
+
+// BeanInfoWidget
+class BeanInfoWidget extends StatelessWidget {
+  final BeanInfo beanInfo;
+
+  const BeanInfoWidget({Key? key, required this.beanInfo}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Name: ${beanInfo.name}'),
+        Text('Origin: ${beanInfo.origin}'),
+        Text('Process: ${beanInfo.process}'),
+      ],
+    );
+  }
+}
+
+// RoastInfoWidget
+class RoastInfoWidget extends StatelessWidget {
+  final RoastInfo roastInfo;
+
+  const RoastInfoWidget({Key? key, required this.roastInfo}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Date: ${roastInfo.date}'),
+        Text('Time: ${roastInfo.time}'),
+        Text('Roaster: ${roastInfo.roaster}'),
+        Text('Pre-Roast Weight: ${roastInfo.preRoastWeight}g'),
+        Text('Post-Roast Weight: ${roastInfo.postRoastWeight}g'),
+        Text('Roast Time: ${roastInfo.roastTime}min'),
+        Text('Roast Level: ${roastInfo.roastLevelName}'),
+      ],
+    );
   }
 }
 
@@ -792,42 +848,38 @@ class TimelineGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Adjust column widths based on card size
+    
     bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     double columnWidth = MediaQuery.of(context).size.width / 5;
     if (isLandscape) {
       columnWidth = MediaQuery.of(context).size.width / 5 / 3;
     }
 
-    return 
-    Container(
-      child:  
-    SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      
-      child: 
-    SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: 
-      DataTable(
-        columnSpacing: 16.0,
-        columns: [
-          DataColumn(label: SizedBox(width: columnWidth, child: const Text('Time'))),
-          DataColumn(label: SizedBox(width: columnWidth, child: const Text('Temp (°C)'))),
-          DataColumn(label: SizedBox(width: columnWidth, child: const Text('ROR'))),
-          DataColumn(label: SizedBox(width: columnWidth, child: const Text('Phase'))),
-        ],
-        rows: logEntries.map((entry) {
-          String eventDisplay = entry.event == Event.none ? '-' : entry.event!;
-          return DataRow(cells: [
-            DataCell(Text('${entry.time ~/ 60}:${(entry.time % 60).toString().padLeft(2, '0')}')),
-            DataCell(Text('${entry.temperature}')),
-            DataCell(Text('${entry.ror}')),
-            DataCell(Text(eventDisplay)),
-          ]);
-        }).toList(),
+    return Container(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columnSpacing: 16.0,
+            columns: [
+              DataColumn(label: SizedBox(width: columnWidth, child: const Text('Time'))),
+              DataColumn(label: SizedBox(width: columnWidth, child: const Text('Temp (°C)'))),
+              DataColumn(label: SizedBox(width: columnWidth, child: const Text('ROR'))),
+              DataColumn(label: SizedBox(width: columnWidth, child: const Text('Phase'))),
+            ],
+            rows: logEntries.map((entry) {
+              String eventDisplay = entry.event == Event.none ? '-' : entry.event!;
+              return DataRow(cells: [
+                DataCell(Text('${entry.time ~/ 60}:${(entry.time % 60).toString().padLeft(2, '0')}')),
+                DataCell(Text('${entry.temperature}')),
+                DataCell(Text('${entry.ror}')),
+                DataCell(Text(eventDisplay)),
+              ]);
+            }).toList(),
+          ),
+        ),
       ),
-    )
-    ),
     );
   }
 }
@@ -1089,4 +1141,263 @@ Future<String?> _showSelectDialog(
       );
     },
   );
+}
+
+// BeanInfoDialog
+class BeanInfoDialog extends StatefulWidget {
+  final BeanInfo beanInfo;
+  final Function(BeanInfo) onSave;
+
+  const BeanInfoDialog({Key? key, required this.beanInfo, required this.onSave}) : super(key: key);
+
+  @override
+  _BeanInfoDialogState createState() => _BeanInfoDialogState();
+}
+
+class _BeanInfoDialogState extends State<BeanInfoDialog> {
+  late TextEditingController _nameController;
+  late TextEditingController _originController;
+  late TextEditingController _processController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.beanInfo.name);
+    _originController = TextEditingController(text: widget.beanInfo.origin);
+    _processController = TextEditingController(text: widget.beanInfo.process);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Bean Info'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: const InputDecoration(labelText: 'Bean Name'),
+            ),
+            TextField(
+              controller: _originController,
+              decoration: const InputDecoration(labelText: 'Origin'),
+            ),
+            TextField(
+              controller: _processController,
+              decoration: const InputDecoration(labelText: 'Process'),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            widget.onSave(BeanInfo(
+              name: _nameController.text,
+              origin: _originController.text,
+              process: _processController.text,
+            ));
+            Navigator.of(context).pop();
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+// RoastInfoDialog
+class RoastInfoDialog extends StatefulWidget {
+  final RoastInfo roastInfo;
+  final Function(RoastInfo) onSave;
+
+  const RoastInfoDialog({Key? key, required this.roastInfo, required this.onSave}) : super(key: key);
+
+  @override
+  _RoastInfoDialogState createState() => _RoastInfoDialogState();
+}
+
+class _RoastInfoDialogState extends State<RoastInfoDialog> {
+  late TextEditingController _roasterController;
+  late TextEditingController _preRoastWeightController;
+  late TextEditingController _postRoastWeightController;
+  late TextEditingController _roastTimeController;
+  late TextEditingController _roastLevelController;
+
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
+  String _selectedRoastLevelName = 'ライトロースト';
+
+  final List<String> _roastLevelNames = [
+    'ライトロースト',
+    'シナモンロースト',
+    'ミディアムロースト',
+    'ハイロースト',
+    'シティロースト',
+    'フルシティロースト',
+    'フレンチロースト',
+    'イタリアンロースト',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _roasterController = TextEditingController(text: widget.roastInfo.roaster);
+    _preRoastWeightController = TextEditingController(text: widget.roastInfo.preRoastWeight);
+    _postRoastWeightController = TextEditingController(text: widget.roastInfo.postRoastWeight);
+    _roastTimeController = TextEditingController(text: widget.roastInfo.roastTime);
+    _roastLevelController = TextEditingController(text: widget.roastInfo.roastLevel.toString());
+
+    // Parse the initial date and time
+    try {
+      _selectedDate = DateTime.parse(widget.roastInfo.date);
+    } catch (e) {
+      _selectedDate = DateTime.now();
+    }
+    try {
+      final timeParts = widget.roastInfo.time.split(':');
+      if (timeParts.length == 2) {
+        _selectedTime = TimeOfDay(
+          hour: int.parse(timeParts[0]),
+          minute: int.parse(timeParts[1]),
+        );
+      }
+    } catch (e) {
+      _selectedTime = TimeOfDay.now();
+    }
+
+    _selectedRoastLevelName = widget.roastInfo.roastLevelName;
+
+    // Check if the initial roastLevelName is in the list; if not, set a default
+    if (!_roastLevelNames.contains(_selectedRoastLevelName)) {
+      _selectedRoastLevelName = _roastLevelNames.first;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Roast Info'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Date Picker
+            TextFormField(
+              readOnly: true,
+              decoration: const InputDecoration(labelText: 'Date'),
+              controller: TextEditingController(text: _selectedDate.toLocal().toString().split(' ')[0]),
+              onTap: () async {
+                FocusScope.of(context).requestFocus(FocusNode());
+                DateTime? pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2100),
+                );
+                if (pickedDate != null) {
+                  setState(() {
+                    _selectedDate = pickedDate;
+                  });
+                }
+              },
+            ),
+            // Time Picker
+            TextFormField(
+              readOnly: true,
+              decoration: const InputDecoration(labelText: 'Time'),
+              controller: TextEditingController(text: _selectedTime.format(context)),
+              onTap: () async {
+                FocusScope.of(context).requestFocus(FocusNode());
+                TimeOfDay? pickedTime = await showTimePicker(
+                  context: context,
+                  initialTime: _selectedTime,
+                );
+                if (pickedTime != null) {
+                  setState(() {
+                    _selectedTime = pickedTime;
+                  });
+                }
+              },
+            ),
+            TextField(
+              controller: _roasterController,
+              decoration: const InputDecoration(labelText: 'Roaster'),
+            ),
+            TextField(
+              controller: _preRoastWeightController,
+              decoration: const InputDecoration(labelText: 'Pre-Roast Weight (g)'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _postRoastWeightController,
+              decoration: const InputDecoration(labelText: 'Post-Roast Weight (g)'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _roastTimeController,
+              decoration: const InputDecoration(labelText: 'Roast Time (min)'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _roastLevelController,
+              decoration: const InputDecoration(labelText: 'Roast Level'),
+              keyboardType: TextInputType.number,
+            ),
+            // Roast Level Name Dropdown
+            DropdownButtonFormField<String>(
+              value: _selectedRoastLevelName,
+              decoration: const InputDecoration(labelText: 'Roast Level Name'),
+              items: _roastLevelNames.map((String roastLevel) {
+                return DropdownMenuItem<String>(
+                  value: roastLevel,
+                  child: Text(roastLevel),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedRoastLevelName = newValue!;
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            // Format date and time
+            String formattedDate = _selectedDate.toLocal().toString().split(' ')[0];
+            String formattedTime = _selectedTime.format(context);
+
+            widget.onSave(RoastInfo(
+              date: formattedDate,
+              time: formattedTime,
+              roaster: _roasterController.text,
+              preRoastWeight: _preRoastWeightController.text,
+              postRoastWeight: _postRoastWeightController.text,
+              roastTime: _roastTimeController.text,
+              roastLevel: double.tryParse(_roastLevelController.text) ?? 0.0,
+              roastLevelName: _selectedRoastLevelName,
+            ));
+            Navigator.of(context).pop();
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    );
+  }
 }
