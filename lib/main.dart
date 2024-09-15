@@ -265,6 +265,31 @@ class _RoastLoggerState extends State<RoastLogger> {
                           ),
                         ),
                         ComponentsContainer(
+                          labelTitle: 'Temperature Charts',
+                          child: Column(
+                            children: [
+                              // Temp display
+                              TempDisplay(
+                                beansTemp: _beansTemp,
+                                envTemp: _envTemp,
+                              ),
+                              ChartDisplay(
+                                logEntries: _roastLog!.logEntries,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Right column: Data Summary, Temperature Charts
+                Expanded(
+                  flex: 1,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        ComponentsContainer(
                           labelTitle: 'Data Summary',
                           buttonTitle: '${_interval} sec',
                           buttonAction: () async {
@@ -294,31 +319,6 @@ class _RoastLoggerState extends State<RoastLogger> {
                           },
                           child: TimelineGrid(
                             logEntries: _roastLog!.logEntries,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Right column: Data Summary, Temperature Charts
-                Expanded(
-                  flex: 1,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        ComponentsContainer(
-                          labelTitle: 'Temperature Charts',
-                          child: Column(
-                            children: [
-                              // Temp display
-                              TempDisplay(
-                                beansTemp: _beansTemp,
-                                envTemp: _envTemp,
-                              ),
-                              ChartDisplay(
-                                logEntries: _roastLog!.logEntries,
-                              ),
-                            ],
                           ),
                         ),
                       ],
@@ -410,6 +410,21 @@ class _RoastLoggerState extends State<RoastLogger> {
                     ),
                   ),
                   ComponentsContainer(
+                    labelTitle: 'Temperature Charts',
+                    child: Column(
+                      children: [
+                        // Temp display
+                        TempDisplay(
+                          beansTemp: _beansTemp,
+                          envTemp: _envTemp,
+                        ),
+                        ChartDisplay(
+                          logEntries: _roastLog!.logEntries,
+                        ),
+                      ],
+                    ),
+                  ),
+                  ComponentsContainer(
                     labelTitle: 'Data Summary',
                     buttonTitle: '${_interval} sec',
                     buttonAction: () async {
@@ -439,21 +454,6 @@ class _RoastLoggerState extends State<RoastLogger> {
                     },
                     child: TimelineGrid(
                       logEntries: _roastLog!.logEntries,
-                    ),
-                  ),
-                  ComponentsContainer(
-                    labelTitle: 'Temperature Charts',
-                    child: Column(
-                      children: [
-                        // Temp display
-                        TempDisplay(
-                          beansTemp: _beansTemp,
-                          envTemp: _envTemp,
-                        ),
-                        ChartDisplay(
-                          logEntries: _roastLog!.logEntries,
-                        ),
-                      ],
                     ),
                   ),
                 ],
@@ -792,11 +792,14 @@ class TimelineGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Adjust column widths based on card size
+    bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     double columnWidth = MediaQuery.of(context).size.width / 5;
+    if (isLandscape) {
+      columnWidth = MediaQuery.of(context).size.width / 5 / 3;
+    }
 
     return 
     Container(
-      height: 400,
       child:  
     SingleChildScrollView(
       scrollDirection: Axis.vertical,
@@ -880,12 +883,14 @@ class ChartDisplay extends StatelessWidget {
 
     List<FlSpot> temperatureSpots = _getTemperatureSpots();
     List<FlSpot> rorSpots = _getRorSpots();
-
+    bool isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    double height = isLandscape ? 400 : 200;
     return Column(
       children: [
         // Temperature chart
         SizedBox(
-          height: 200,
+          height: height,
+          width: double.infinity,
           child: LineChart(
             LineChartData(
               gridData: FlGridData(show: true),
