@@ -464,9 +464,18 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
     if (_roastLog!.logEntries.isNotEmpty) {
       setState(() {
         _roastLog!.logEntries[_roastLog!.logEntries.length - 1].event = event;
+        if (event == Event.drop) {
+          _roastLog?.roastInfo.roastTime = _formatTime(_currentTime);
+        }
         _updateAll();
       });
     }
+  }
+
+  String _formatTime(int time) {
+    int minutes = time ~/ 60;
+    int seconds = time % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   void _updateTemperture(int beansTemp, int envTemp) {

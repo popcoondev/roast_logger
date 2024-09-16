@@ -22,22 +22,24 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
-  String _selectedRoastLevelName = 'ライトロースト';
+  String _selectedRoastLevelName = 'Light';
 
+  // List of roast level names 8 names
   final List<String> _roastLevelNames = [
-    'ライトロースト',
-    'シナモンロースト',
-    'ミディアムロースト',
-    'ハイロースト',
-    'シティロースト',
-    'フルシティロースト',
-    'フレンチロースト',
-    'イタリアンロースト',
+    'Light',
+    'Cinnamon',
+    'Medium',
+    'High',
+    'City',
+    'Full City',
+    'French',
+    'Italian',
   ];
 
   @override
   void initState() {
     super.initState();
+    
     _roasterController = TextEditingController(text: widget.roastInfo.roaster);
     _preRoastWeightController = TextEditingController(text: widget.roastInfo.preRoastWeight);
     _postRoastWeightController = TextEditingController(text: widget.roastInfo.postRoastWeight);
@@ -124,15 +126,21 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
               controller: _preRoastWeightController,
               decoration: const InputDecoration(labelText: 'Pre-Roast Weight (g)'),
               keyboardType: TextInputType.number,
+              onChanged: (value) => setState(() {
+                calcRoastLevel();
+              }),
             ),
             TextField(
               controller: _postRoastWeightController,
               decoration: const InputDecoration(labelText: 'Post-Roast Weight (g)'),
               keyboardType: TextInputType.number,
+              onChanged: (value) => setState(() {
+                calcRoastLevel();
+              }),
             ),
             TextField(
               controller: _roastTimeController,
-              decoration: const InputDecoration(labelText: 'Roast Time (min)'),
+              decoration: const InputDecoration(labelText: 'Roast Time (m:ss)'),
               keyboardType: TextInputType.number,
             ),
             TextField(
@@ -188,5 +196,15 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
         ),
       ],
     );
+  }
+
+  void calcRoastLevel() {
+    if (_preRoastWeightController.text.isEmpty || _postRoastWeightController.text.isEmpty) {
+      return;
+    }
+    double preRoastWeight = double.tryParse(_preRoastWeightController.text) ?? 0.0;
+    double postRoastWeight = double.tryParse(_postRoastWeightController.text) ?? 0.0;
+    double roastLevel = (postRoastWeight - preRoastWeight);
+    _roastLevelController.text = roastLevel.toStringAsFixed(1);
   }
 }
