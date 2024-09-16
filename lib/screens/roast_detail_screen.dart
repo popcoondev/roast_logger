@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../dialogs/roast_info_dialog.dart';
+import '../models/roast_info.dart';
 import '../models/roast_log.dart';
 import '../models/cupping_result.dart';
 import 'cupping_result_screen.dart'; // カッピング結果の編集画面
@@ -13,26 +15,74 @@ class RoastDetailScreen extends StatefulWidget {
 }
 
 class _RoastDetailScreenState extends State<RoastDetailScreen> {
-  void _editCuppingResults() async {
-    final updatedCuppingResult = await Navigator.push(
+  // 焙煎情報を編集
+  // RoastInfoDialogを表示して、編集した情報を保存
+  void _editRoastInfo() async {
+    final updatedRoastInfo = await showDialog(
+      context: context,
+      builder: (context) {
+        return RoastInfoDialog(roastInfo: widget.roastLog.roastInfo, onSave: (RoastInfo ) { 
+          Navigator.pop(context, RoastInfo);
+         },);
+      },
+    );
+
+    if (updatedRoastInfo != null && updatedRoastInfo is RoastInfo) {
+      setState(() {
+        widget.roastLog.roastInfo = updatedRoastInfo;
+      });
+    }
+
+  }
+
+
+  // カッピング結果を日付順に取得
+  List<CuppingResult> get _sortedCuppingResults {
+    var results = List<CuppingResult>.from(widget.roastLog.cuppingResults);
+    results.sort((a, b) => b.date.compareTo(a.date));
+    return results;
+  }
+
+  // 新しいカッピング結果を追加
+  void _addCuppingResult() async {
+    debugPrint('Adding new cupping result'); 
+    CuppingResult newResult = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CuppingResultScreen(
-          cuppingResult: widget.roastLog.cuppingResult,
-        ),
+        builder: (context) => const CuppingResultScreen(),
       ),
     );
 
-    if (updatedCuppingResult != null && updatedCuppingResult is CuppingResult) {
+    debugPrint('New result: $newResult');
+    debugPrint('New result type: ${newResult.runtimeType}');
+    debugPrint('New result aroma: ${(newResult as CuppingResult).aroma}');
+    if (newResult != null && newResult is CuppingResult) {
       setState(() {
-        widget.roastLog.cuppingResult = updatedCuppingResult;
+        widget.roastLog.cuppingResults.add(newResult);
+      });
+    }
+  }
+
+  // カッピング結果を編集
+  void _editCuppingResult(CuppingResult result) async {
+    final updatedResult = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CuppingResultScreen(cuppingResult: result),
+      ),
+    );
+
+    if (updatedResult != null && updatedResult is CuppingResult) {
+      setState(() {
+        int index = widget.roastLog.cuppingResults.indexOf(result);
+        widget.roastLog.cuppingResults[index] = updatedResult;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final cuppingResult = widget.roastLog.cuppingResult;
+    final cuppingResult = widget.roastLog.cuppingResults;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,7 +90,7 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            onPressed: _editCuppingResults,
+            onPressed: _editRoastInfo,
           ),
         ],
       ),
@@ -73,46 +123,25 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
             ListTile(
               title: const Text('Cupping Results'),
               trailing: IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: _editCuppingResults,
+                icon: const Icon(Icons.add),
+                onPressed: _addCuppingResult,
               ),
             ),
-            cuppingResult != null
-                ? Column(
-                    children: [
-                      ListTile(
-                        title: const Text('Aroma'),
-                        trailing: Text(cuppingResult.aroma.toString()),
-                      ),
-                      ListTile(
-                        title: const Text('Flavor'),
-                        trailing: Text(cuppingResult.flavor.toString()),
-                      ),
-                      ListTile(
-                        title: const Text('Aftertaste'),
-                        trailing: Text(cuppingResult.aftertaste.toString()),
-                      ),
-                      ListTile(
-                        title: const Text('Acidity'),
-                        trailing: Text(cuppingResult.acidity.toString()),
-                      ),
-                      ListTile(
-                        title: const Text('Body'),
-                        trailing: Text(cuppingResult.body.toString()),
-                      ),
-                      ListTile(
-                        title: const Text('Balance'),
-                        trailing: Text(cuppingResult.balance.toString()),
-                      ),
-                      ListTile(
-                        title: const Text('Overall'),
-                        trailing: Text(cuppingResult.overall.toString()),
-                      ),
-                      ListTile(
-                        title: const Text('Notes'),
-                        subtitle: Text(cuppingResult.notes),
-                      ),
-                    ],
+            _sortedCuppingResults.isNotEmpty
+                ? ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _sortedCuppingResults.length,
+                    itemBuilder: (context, index) {
+                      final result = _sortedCuppingResults[index];
+                      return ListTile(
+                        title: Text(
+                          'Date: ${result.date.toLocal().toString().split(' ')[0]}',
+                        ),
+                        subtitle: Text('Overall: ${result.overall}'),
+                        onTap: () => _editCuppingResult(result),
+                      );
+                    },
                   )
                 : const ListTile(
                     title: Text('No cupping results yet'),

@@ -1,6 +1,7 @@
 // models/cupping_result.dart
 
 class CuppingResult {
+  DateTime date; // 日付を追加
   double aroma;
   double flavor;
   double aftertaste;
@@ -11,6 +12,7 @@ class CuppingResult {
   String notes;
 
   CuppingResult({
+    required this.date,
     this.aroma = 0.0,
     this.flavor = 0.0,
     this.aftertaste = 0.0,
@@ -21,5 +23,5 @@ class CuppingResult {
     this.notes = '',
   });
 
-  // JSON への変換やデータの保存のために、toJson, fromJson メソッドを追加することができます
+  // データ保存のために toJson と fromJson を追加できます
 }

@@ -6,7 +6,7 @@ import '../models/cupping_result.dart';
 class CuppingResultScreen extends StatefulWidget {
   final CuppingResult? cuppingResult;
 
-  const CuppingResultScreen({Key? key, this.cuppingResult}) : super(key: key);
+  const CuppingResultScreen({super.key, this.cuppingResult});
 
   @override
   _CuppingResultScreenState createState() => _CuppingResultScreenState();
@@ -22,25 +22,43 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
   late double _body;
   late double _balance;
   late double _overall;
+  late DateTime _date;
   late TextEditingController _notesController;
 
   @override
   void initState() {
     super.initState();
-    final cuppingResult = widget.cuppingResult ?? CuppingResult();
-    _aroma = cuppingResult.aroma;
-    _flavor = cuppingResult.flavor;
-    _aftertaste = cuppingResult.aftertaste;
-    _acidity = cuppingResult.acidity;
-    _body = cuppingResult.body;
-    _balance = cuppingResult.balance;
-    _overall = cuppingResult.overall;
-    _notesController = TextEditingController(text: cuppingResult.notes);
+    final cuppingResult = widget.cuppingResult;
+    _date = cuppingResult?.date ?? DateTime.now();
+    _aroma = cuppingResult?.aroma ?? 0.0;
+    _flavor = cuppingResult?.flavor ?? 0.0;
+    _aftertaste = cuppingResult?.aftertaste ?? 0.0;
+    _acidity = cuppingResult?.acidity ?? 0.0;
+    _body = cuppingResult?.body ?? 0.0;
+    _balance = cuppingResult?.balance ?? 0.0;
+    _overall = cuppingResult?.overall ?? 0.0;
+    _notesController = TextEditingController(text: cuppingResult?.notes);
+  }
+
+    // 日付ピッカーの追加
+  Future<void> _selectDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (pickedDate != null && pickedDate != _date) {
+      setState(() {
+        _date = pickedDate;
+      });
+    }
   }
 
   void _saveCuppingResult() {
     if (_formKey.currentState!.validate()) {
       final newCuppingResult = CuppingResult(
+        date: _date,
         aroma: _aroma,
         flavor: _flavor,
         aftertaste: _aftertaste,
@@ -95,6 +113,15 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
+              // 日付ピッカーの追加
+              ListTile(
+                title: const Text('Date'),
+                subtitle: Text(_date.toLocal().toString().split(' ')[0]),
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: _selectDate,
+                ),
+              ),
               _buildSlider('Aroma', _aroma, (value) {
                 setState(() {
                   _aroma = value;

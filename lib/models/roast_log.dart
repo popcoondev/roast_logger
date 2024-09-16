@@ -10,13 +10,13 @@ class RoastLog {
   int currentTime;
   BeanInfo beanInfo;
   RoastInfo roastInfo;
-  CuppingResult? cuppingResult; // カッピング結果を追加
+  List<CuppingResult> cuppingResults;
 
   RoastLog({
     required this.logEntries,
     required this.currentTime,
     required this.beanInfo,
     required this.roastInfo,
-    this.cuppingResult, // 初期値は null
+    this.cuppingResults = const [], // 初期値は null
   });
 }
