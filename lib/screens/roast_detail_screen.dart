@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../data/flavor_wheel_data.dart';
 import '../dialogs/roast_info_dialog.dart';
 import '../models/roast_info.dart';
 import '../models/roast_log.dart';
@@ -138,7 +139,24 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
                         title: Text(
                           'Date: ${result.date.toLocal().toString().split(' ')[0]}',
                         ),
-                        subtitle: Text('Overall: ${result.overall}'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Overall: ${result.overall}'),
+                            Wrap(
+                              spacing: 4.0,
+                              runSpacing: 4.0,
+                              children: result.flavors.map((flavorName) {
+                                // フレーバーノードを検索して色を取得
+                                FlavorNode? flavorNode = findFlavorNodeByName(flavorWheelData, flavorName);
+                                return Chip(
+                                  label: Text(flavorName),
+                                  backgroundColor: flavorNode?.color ?? Colors.grey[200],
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
                         onTap: () => _editCuppingResult(result),
                       );
                     },
@@ -151,4 +169,18 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
       ),
     );
   }
+
+  FlavorNode? findFlavorNodeByName(List<FlavorNode> nodes, String name) {
+  for (var node in nodes) {
+    if (node.name == name) {
+      return node;
+    } else if (node.children.isNotEmpty) {
+      var childResult = findFlavorNodeByName(node.children, name);
+      if (childResult != null) {
+        return childResult;
+      }
+    }
+  }
+  return null;
+}
 }

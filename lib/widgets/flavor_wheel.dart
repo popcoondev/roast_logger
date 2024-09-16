@@ -26,21 +26,28 @@ class _FlavorWheelState extends State<FlavorWheel> {
     widget.onSelectionChanged(_selectedFlavors);
   }
 
-  Widget _buildFlavorNode(FlavorNode node, {int level = 0}) {
-    bool isSelected = _selectedFlavors.contains(node.name);
-    return ListTile(
-      leading: SizedBox(
-        width: level * 16.0,
+Widget _buildFlavorNode(FlavorNode node, {int level = 0}) {
+  bool isSelected = _selectedFlavors.contains(node.name);
+  return ListTile(
+    leading: Icon(
+      node.icon,
+      color: node.color,
+    ),
+    title: Text(
+      node.name,
+      style: TextStyle(
+        color: isSelected ? Theme.of(context).primaryColor : Colors.black,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
-      title: Text(node.name),
-      trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
-      onTap: () {
-        if (node.children.isEmpty) {
-          _onFlavorTapped(node.name);
-        }
-      },
-    );
-  }
+    ),
+    trailing: isSelected ? const Icon(Icons.check, color: Colors.green) : null,
+    onTap: () {
+      if (node.children.isEmpty) {
+        _onFlavorTapped(node.name);
+      }
+    },
+  );
+}
 
   Widget _buildFlavorList(List<FlavorNode> nodes, {int level = 0}) {
     return Column(
@@ -49,8 +56,9 @@ class _FlavorWheelState extends State<FlavorWheel> {
           return _buildFlavorNode(node, level: level);
         } else {
           return ExpansionTile(
-            leading: SizedBox(
-              width: level * 16.0,
+            leading: Icon(
+              node.icon,
+              color: node.color,
             ),
             title: Text(node.name),
             children: node.children
