@@ -2,12 +2,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:roast_logger/models/chart_settings.dart';
 import '../models/log_entry.dart';
 
 class ChartDisplay extends StatelessWidget {
   final List<LogEntry> logEntries;
+  final ChartSettings chartSettings;
 
-  const ChartDisplay({Key? key, required this.logEntries}) : super(key: key);
+  const ChartDisplay({
+    Key? key,
+    required this.logEntries,
+    required this.chartSettings,
+  }) : super(key: key);
 
   List<FlSpot> _getTemperatureSpots() {
     return logEntries.map((entry) {
@@ -44,10 +50,17 @@ class ChartDisplay extends StatelessWidget {
         SizedBox(
           height: height,
           width: double.infinity,
-          child: LineChart(
+          child: LineChart( 
             LineChartData(
               gridData: FlGridData(show: true),
               titlesData: FlTitlesData(
+                topTitles: AxisTitles(
+                  axisNameWidget: Text(
+                    'Temperature (°C)',
+                    textAlign: TextAlign.left,
+                  ),
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -58,19 +71,23 @@ class ChartDisplay extends StatelessWidget {
                   ),
                 ),
                 leftTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: true, interval: 40),
+                  sideTitles: SideTitles(showTitles: true, interval: 50, reservedSize: 46),
+                ),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: true, interval: 50, reservedSize: 46),
                 ),
               ),
+              clipData: FlClipData.all(),
               minX: 0,
               maxX: temperatureSpots.last.x,
-              minY: 0,
-              maxY: 280,
+              minY: chartSettings.tempYMin,
+              maxY: chartSettings.tempYMax,
               lineBarsData: [
                 LineChartBarData(
                   spots: temperatureSpots,
-                  isCurved: true,
-                  color: Colors.blue,
-                  barWidth: 2,
+                  isCurved: chartSettings.isCurved,
+                  color: const Color(0xFF2196F3),
+                  barWidth: chartSettings.lineWidth,
                   dotData: FlDotData(show: false),
                 ),
               ],
@@ -84,23 +101,34 @@ class ChartDisplay extends StatelessWidget {
             LineChartData(
               gridData: FlGridData(show: true),
               titlesData: FlTitlesData(
+                topTitles: AxisTitles(
+                  axisNameWidget: Text(
+                    'ROR (°C/min)',
+                    textAlign: TextAlign.left,
+                  ),
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
                 ),
                 leftTitles: AxisTitles(
-                  sideTitles: SideTitles(showTitles: true, interval: 15),
+                  sideTitles: SideTitles(showTitles: true, interval: 50, reservedSize: 46),
+                ),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: true, interval: 50, reservedSize: 46),
                 ),
               ),
+              clipData: FlClipData.all(),
               minX: 0,
               maxX: rorSpots.last.x,
-              minY: -30,
-              maxY: 30,
+              minY: chartSettings.rorYMin,
+              maxY: chartSettings.rorYMax,
               lineBarsData: [
                 LineChartBarData(
                   spots: rorSpots,
-                  isCurved: true,
-                  color: Colors.red,
-                  barWidth: 2,
+                  isCurved: chartSettings.isCurved,
+                  color: const Color(0xFFE53935),
+                  barWidth: chartSettings.lineWidth,
                   dotData: FlDotData(show: false),
                 ),
               ],

@@ -25,13 +25,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Roast Logger',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFD35400)),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF5F5F5),
         textTheme: GoogleFonts.notoSansTextTheme(
           Theme.of(context).textTheme.apply(
-                bodyColor: Colors.black87,
-                displayColor: Colors.black87,
+                bodyColor: const Color(0xFF333333),
+                displayColor: const Color(0xFF666666),
               ),
         ),
       ),

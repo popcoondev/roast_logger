@@ -44,11 +44,32 @@ class _InputTemperatureState extends State<InputTemperature> {
               onPressed: () {
                 setState(() {
                   int temp = int.parse(_beansTempController.text);
+                  temp += 10;
+                  _beansTempController.text = temp.toString();
+                });
+              },
+              child: Text('+10'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  int temp = int.parse(_beansTempController.text);
+                  temp -= 10;
+                  _beansTempController.text = temp.toString();
+                });
+              },
+              child: Text('-10'),
+            ),
+            VerticalDivider(),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  int temp = int.parse(_beansTempController.text);
                   temp++;
                   _beansTempController.text = temp.toString();
                 });
               },
-              child: const Icon(Icons.arrow_upward),
+              child: Text('+1'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -58,7 +79,7 @@ class _InputTemperatureState extends State<InputTemperature> {
                   _beansTempController.text = temp.toString();
                 });
               },
-              child: const Icon(Icons.arrow_downward),
+              child: Text('-1'),
             ),
           ],
         ),

@@ -3,7 +3,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../dialogs/chart_settings_dialog.dart';
 import '../models/bean_info.dart';
+import '../models/chart_settings.dart';
 import '../models/roast_info.dart';
 import '../models/log_entry.dart';
 import '../models/roast_log.dart';
@@ -40,6 +42,7 @@ class _RoastLoggerState extends State<RoastLogger> {
   int _inputTempMode = 0; // 0: manual, 1: auto
   Timer? _timer;
   RoastLog? _roastLog;
+  ChartSettings _chartSettings = ChartSettings();
 
   @override
   void initState() {
@@ -184,6 +187,10 @@ class _RoastLoggerState extends State<RoastLogger> {
                         ),
                         ComponentsContainer(
                           labelTitle: 'Temperature Charts',
+                          buttonTitle: 'Chart Settings',
+                          buttonAction: () {
+                            _openChartSettingsDialog(context);
+                          },
                           child: Column(
                             children: [
                               // Temp display
@@ -193,6 +200,7 @@ class _RoastLoggerState extends State<RoastLogger> {
                               ),
                               ChartDisplay(
                                 logEntries: _roastLog!.logEntries,
+                                chartSettings: _chartSettings,
                               ),
                             ],
                           ),
@@ -320,6 +328,10 @@ class _RoastLoggerState extends State<RoastLogger> {
                   ),
                   ComponentsContainer(
                     labelTitle: 'Temperature Charts',
+                    buttonTitle: 'Chart Settings',
+                    buttonAction: () {
+                      _openChartSettingsDialog(context);
+                    },
                     child: Column(
                       children: [
                         // Temp display
@@ -329,6 +341,7 @@ class _RoastLoggerState extends State<RoastLogger> {
                         ),
                         ChartDisplay(
                           logEntries: _roastLog!.logEntries,
+                          chartSettings: _chartSettings,
                         ),
                       ],
                     ),
@@ -371,6 +384,22 @@ class _RoastLoggerState extends State<RoastLogger> {
           }
         },
       ),
+    );
+  }
+
+  void _openChartSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return ChartSettingsDialog(
+          chartSettings: _chartSettings,
+          onSave: (newSettings) {
+            setState(() {
+              _chartSettings = newSettings;
+            });
+          },
+        );
+      },
     );
   }
 
