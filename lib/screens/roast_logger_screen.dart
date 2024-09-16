@@ -12,15 +12,15 @@ import '../models/log_entry.dart';
 import '../models/roast_log.dart';
 
 // 他の必要なインポート
-import 'bean_info_widget.dart';
-import 'roast_info_widget.dart';
-import 'components_container.dart';
-import 'timer_widget.dart';
-import 'input_temperature.dart';
-import 'input_events.dart';
-import 'temp_display.dart';
-import 'chart_display.dart';
-import 'websocket_controller.dart';
+import '../widgets/bean_info_widget.dart';
+import '../widgets/roast_info_widget.dart';
+import '../widgets/components_container.dart';
+import '../widgets/timer_widget.dart';
+import '../widgets/input_temperature.dart';
+import '../widgets/input_events.dart';
+import '../widgets/temp_display.dart';
+import '../widgets/chart_display.dart';
+import '../widgets/websocket_controller.dart';
 import '../utils/dialogs.dart';
 import '../widgets/timeline_grid.dart';
 import '../dialogs/bean_info_dialog.dart';
@@ -28,14 +28,14 @@ import '../dialogs/roast_info_dialog.dart';
 import '../utils/events.dart';
 
 // 続きは既存のRoastLoggerクラスの内容をここに移動します。
-class RoastLogger extends StatefulWidget {
-  const RoastLogger({Key? key}) : super(key: key);
+class RoastLoggerScreen extends StatefulWidget {
+  const RoastLoggerScreen({Key? key}) : super(key: key);
 
   @override
-  State<RoastLogger> createState() => _RoastLoggerState();
+  State<RoastLoggerScreen> createState() => _RoastLoggerState();
 }
 
-class _RoastLoggerState extends State<RoastLogger> {
+class _RoastLoggerState extends State<RoastLoggerScreen> {
   int _currentTime = 0; // current time
   int _beansTemp = 0; // beans temperature
   int _envTemp = 0; // environment temperature
