@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:roast_logger/widgets/timer_small_widget.dart';
 import '../dialogs/chart_settings_dialog.dart';
 import '../models/bean_info.dart';
 import '../models/chart_settings.dart';
@@ -43,10 +44,14 @@ class _RoastLoggerState extends State<RoastLogger> {
   Timer? _timer;
   RoastLog? _roastLog;
   ChartSettings _chartSettings = ChartSettings();
+  ScrollController _scrollController = ScrollController();
+  bool _showFloatingTimer = false;
+  final GlobalKey _timerKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_scrollListener);
     // Initialize roast log
     _roastLog = RoastLog(
       logEntries: [],
@@ -80,6 +85,39 @@ class _RoastLoggerState extends State<RoastLogger> {
     }
   }
 
+  // スクロールリスナー
+  void _scrollListener() {
+    debugPrint('Scroll position: ${_scrollController.offset}'); 
+    debugPrint('timerKey: ${_timerKey.currentContext}');
+    if (_timerKey.currentContext != null) {
+      RenderBox renderBox = _timerKey.currentContext!.findRenderObject() as RenderBox;
+      Offset position = renderBox.localToGlobal(Offset.zero);
+      debugPrint('TimerWidget position: ${position.dy}');
+      // TimerWidgetが画面上から消えた場合
+      if (position.dy + renderBox.size.height < kToolbarHeight) {
+        if (!_showFloatingTimer) {
+          setState(() {
+            _showFloatingTimer = true;
+            debugPrint('Show floating timer');
+          });
+        }
+      } else {
+        if (_showFloatingTimer) {
+          setState(() {
+            _showFloatingTimer = false;
+            debugPrint('Hide floating timer');
+          });
+        }
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     var isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
@@ -94,7 +132,9 @@ class _RoastLoggerState extends State<RoastLogger> {
           TextButton(onPressed: () {}, child: const Text('SETTINGS')),
         ],
       ),
-      body: LayoutBuilder(
+      body: Stack(
+      children: [
+        LayoutBuilder(
         builder: (context, constraints) {
           if (isLandscape) {
             // Landscape layout with three columns
@@ -256,6 +296,7 @@ class _RoastLoggerState extends State<RoastLogger> {
           } else {
             // Portrait layout
             return SingleChildScrollView(
+              controller: _scrollController,
               child: Column(
                 children: <Widget>[
                   ComponentsContainer(
@@ -275,6 +316,7 @@ class _RoastLoggerState extends State<RoastLogger> {
                     child: RoastInfoWidget(roastInfo: _roastLog!.roastInfo),
                   ),
                   ComponentsContainer(
+                    key: _timerKey,
                     labelTitle: 'Timer',
                     buttonTitle: 'Data Reset',
                     buttonAction: _timer == null
@@ -384,6 +426,21 @@ class _RoastLoggerState extends State<RoastLogger> {
           }
         },
       ),
+      // フローティング表示されるTimerWidget
+      Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        child: isLandscape
+            ? const Offstage()
+            :
+        Offstage(
+          offstage: !_showFloatingTimer,
+          child: TimerSmallWidget(currentTime: _currentTime, timerState: _timer == null ? 0 : 1, startTimer: _startTimer, stopTimer: _stopTimer),
+        ),
+      ),
+    ],
+    ),
     );
   }
 
