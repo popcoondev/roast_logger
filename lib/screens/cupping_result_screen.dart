@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../models/cupping_result.dart';
+import '../widgets/flavor_wheel.dart';
 
 class CuppingResultScreen extends StatefulWidget {
   final CuppingResult? cuppingResult;
@@ -24,6 +25,7 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
   late double _overall;
   late DateTime _date;
   late TextEditingController _notesController;
+  List<String> _selectedFlavors = [];
 
   @override
   void initState() {
@@ -38,6 +40,7 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
     _balance = cuppingResult?.balance ?? 0.0;
     _overall = cuppingResult?.overall ?? 0.0;
     _notesController = TextEditingController(text: cuppingResult?.notes);
+    _selectedFlavors = cuppingResult?.flavors ?? [];
   }
 
     // 日付ピッカーの追加
@@ -67,6 +70,7 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
         balance: _balance,
         overall: _overall,
         notes: _notesController.text,
+        flavors: _selectedFlavors,
       );
       Navigator.pop(context, newCuppingResult);
     }
@@ -165,6 +169,18 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
                   border: OutlineInputBorder(),
                 ),
                 maxLines: 5,
+              ),
+              const SizedBox(height: 16.0),
+              const Text(
+                'Flavor Wheel',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              FlavorWheel(
+                onSelectionChanged: (selectedFlavors) {
+                  setState(() {
+                    _selectedFlavors = selectedFlavors;
+                  });
+                },
               ),
             ],
           ),
