@@ -29,10 +29,14 @@ import '../utils/events.dart';
 
 // 続きは既存のRoastLoggerクラスの内容をここに移動します。
 class RoastLoggerScreen extends StatefulWidget {
-  const RoastLoggerScreen({Key? key}) : super(key: key);
+  //　RoastLogを受け取れるようにする
+  RoastLog? roastLog;
+  bool isEdit = false;
+  RoastLoggerScreen({Key? key, this.roastLog, this.isEdit = false}) : super(key: key);
 
+  // roastLogは_RoastLoggerStateに渡す
   @override
-  State<RoastLoggerScreen> createState() => _RoastLoggerState();
+  _RoastLoggerState createState() => _RoastLoggerState();
 }
 
 class _RoastLoggerState extends State<RoastLoggerScreen> {
@@ -53,25 +57,49 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
     super.initState();
     _scrollController.addListener(_scrollListener);
     // Initialize roast log
-    _roastLog = RoastLog(
-      logEntries: [],
-      currentTime: 0,
-      beanInfo: BeanInfo(
-        name: 'Arabica',
-        origin: 'Ethiopia',
-        process: 'Washed',
-      ),
-      roastInfo: RoastInfo(
-        date: '2021-10-01',
-        time: '12:00',
-        roaster: 'Gene Cafe',
-        preRoastWeight: '100',
-        postRoastWeight: '90',
-        roastTime: '10',
-        roastLevel: 10.0,
-        roastLevelName: 'Light',
-      ),
-    );
+    _roastLog = widget.roastLog;
+    // _roastLogの初期化
+    _roastLog ??= RoastLog(
+        logEntries: [],
+        currentTime: 0,
+        beanInfo: BeanInfo(
+          name: '',
+          origin: '',
+          process: '',
+        ),
+        roastInfo: RoastInfo(
+          date: '',
+          time: '',
+          roaster: '',
+          preRoastWeight: '',
+          postRoastWeight: '',
+          roastTime: '',
+          roastLevel: 0,
+          roastLevelName: '',
+        ),
+      );
+
+    if(!widget.isEdit) {
+    // テストデータ
+    // _roastLog = RoastLog(
+    //   logEntries: [],
+    //   currentTime: 0,
+    //   beanInfo: BeanInfo(
+    //     name: 'Arabica',
+    //     origin: 'Ethiopia',
+    //     process: 'Washed',
+    //   ),
+    //   roastInfo: RoastInfo(
+    //     date: '2021-10-01',
+    //     time: '12:00',
+    //     roaster: 'Gene Cafe',
+    //     preRoastWeight: '100',
+    //     postRoastWeight: '90',
+    //     roastTime: '10',
+    //     roastLevel: 10.0,
+    //     roastLevelName: 'Light',
+    //   ),
+    // );
 
     // Test data
     for (int i = 0; i < 600; i += 30) {
@@ -83,22 +111,20 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
         event: Event.none,
       ));
     }
+    }
   }
 
   // スクロールリスナー
   void _scrollListener() {
-    debugPrint('Scroll position: ${_scrollController.offset}'); 
-    debugPrint('timerKey: ${_timerKey.currentContext}');
     if (_timerKey.currentContext != null) {
       RenderBox renderBox = _timerKey.currentContext!.findRenderObject() as RenderBox;
       Offset position = renderBox.localToGlobal(Offset.zero);
-      debugPrint('TimerWidget position: ${position.dy}');
+      
       // TimerWidgetが画面上から消えた場合
       if (position.dy + renderBox.size.height < kToolbarHeight) {
         if (!_showFloatingTimer) {
           setState(() {
             _showFloatingTimer = true;
-            debugPrint('Show floating timer');
           });
         }
       } else {
@@ -128,8 +154,10 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
           style: Theme.of(context).textTheme.titleLarge,
         ),
         actions: [
-          TextButton(onPressed: () {}, child: const Text('MENU')),
-          TextButton(onPressed: () {}, child: const Text('SETTINGS')),
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: _saveRoastResult,
+          ),
         ],
       ),
       body: Stack(
@@ -164,6 +192,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
                           child: RoastInfoWidget(roastInfo: _roastLog!.roastInfo),
                         ),
                         ComponentsContainer(
+                          isVisible: widget.isEdit, 
                           labelTitle: 'Timer',
                           buttonTitle: 'Data Reset',
                           buttonAction: _timer == null
@@ -183,6 +212,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
                           ),
                         ),
                         ComponentsContainer(
+                          isVisible: widget.isEdit, 
                           labelTitle: 'Input Temperature',
                           buttonTitle: _inputTempMode == 0 ? 'Switch to Auto' : 'Switch to Manual',
                           buttonAction: _timer == null
@@ -220,6 +250,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
                     child: Column(
                       children: [
                         ComponentsContainer(
+                          isVisible: widget.isEdit, 
                           labelTitle: 'Input Phases',
                           child: InputEvents(
                             addEvent: _addEvent,
@@ -316,6 +347,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
                     child: RoastInfoWidget(roastInfo: _roastLog!.roastInfo),
                   ),
                   ComponentsContainer(
+                    isVisible: widget.isEdit, 
                     key: _timerKey,
                     labelTitle: 'Timer',
                     buttonTitle: 'Data Reset',
@@ -336,6 +368,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
                     ),
                   ),
                   ComponentsContainer(
+                    isVisible: widget.isEdit, 
                     labelTitle: 'Input Temperature',
                     buttonTitle: _inputTempMode == 0 ? 'Switch to Auto' : 'Switch to Manual',
                     buttonAction: _timer == null
@@ -363,6 +396,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
                           ),
                   ),
                   ComponentsContainer(
+                    isVisible: widget.isEdit, 
                     labelTitle: 'Input Phases',
                     child: InputEvents(
                       addEvent: _addEvent,
@@ -442,6 +476,11 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
     ],
     ),
     );
+  }
+
+  void _saveRoastResult() {
+    // Save roast log
+    Navigator.pop(context, _roastLog);
   }
 
   void _openChartSettingsDialog(BuildContext context) {

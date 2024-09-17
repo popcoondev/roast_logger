@@ -204,7 +204,7 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
     }
     double preRoastWeight = double.tryParse(_preRoastWeightController.text) ?? 0.0;
     double postRoastWeight = double.tryParse(_postRoastWeightController.text) ?? 0.0;
-    double roastLevel = (postRoastWeight - preRoastWeight);
-    _roastLevelController.text = roastLevel.toStringAsFixed(1);
+    double roastLevel = postRoastWeight / preRoastWeight;
+    _roastLevelController.text = roastLevel.toStringAsFixed(2);
   }
 }

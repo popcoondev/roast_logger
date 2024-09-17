@@ -1,12 +1,14 @@
 // models/cupping_result.dart
 
 class CuppingResult {
-  DateTime date; // 日付を追加
+  DateTime date;
   double aroma;
   double flavor;
-  double aftertaste;
+  double sweetness;
   double acidity;
   double body;
+  double cleanliness;
+  double aftertaste;
   double balance;
   double overall;
   String notes;
@@ -14,16 +16,17 @@ class CuppingResult {
 
   CuppingResult({
     required this.date,
-    this.aroma = 0.0,
-    this.flavor = 0.0,
-    this.aftertaste = 0.0,
-    this.acidity = 0.0,
-    this.body = 0.0,
-    this.balance = 0.0,
-    this.overall = 0.0,
+    this.aroma = 0,
+    this.flavor = 0,
+    this.sweetness = 0,
+    this.acidity = 0,
+    this.body = 0,
+    this.cleanliness = 0,
+    this.aftertaste = 0,
+    this.balance = 0,
+    this.overall = 0,
     this.notes = '',
     this.flavors = const [],
-
   });
 
   // データ保存のために toJson と fromJson を追加できます
@@ -31,9 +34,11 @@ class CuppingResult {
         'date': date.toIso8601String(),
         'aroma': aroma,
         'flavor': flavor,
-        'aftertaste': aftertaste,
+        'sweetness': sweetness,
         'acidity': acidity,
         'body': body,
+        'cleanliness': cleanliness,
+        'aftertaste': aftertaste,
         'balance': balance,
         'overall': overall,
         'notes': notes,
@@ -44,9 +49,11 @@ class CuppingResult {
         date: DateTime.parse(json['date']),
         aroma: json['aroma'],
         flavor: json['flavor'],
-        aftertaste: json['aftertaste'],
+        sweetness: json['sweetness'],
         acidity: json['acidity'],
         body: json['body'],
+        cleanliness: json['cleanliness'],
+        aftertaste: json['aftertaste'],
         balance: json['balance'],
         overall: json['overall'],
         notes: json['notes'],

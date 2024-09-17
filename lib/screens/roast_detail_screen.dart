@@ -1,21 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:roast_logger/screens/roast_logger_screen.dart';
 import '../data/flavor_wheel_data.dart';
 import '../dialogs/roast_info_dialog.dart';
 import '../models/roast_info.dart';
 import '../models/roast_log.dart';
 import '../models/cupping_result.dart';
+import '../widgets/components_container.dart';
+import '../widgets/roast_info_widget.dart';
 import 'cupping_result_screen.dart'; // カッピング結果の編集画面
 
 class RoastDetailScreen extends StatefulWidget {
-  final RoastLog roastLog;
+  RoastLog roastLog;
 
-  const RoastDetailScreen({Key? key, required this.roastLog}) : super(key: key);
+  RoastDetailScreen({required this.roastLog});
 
   @override
   _RoastDetailScreenState createState() => _RoastDetailScreenState();
 }
 
 class _RoastDetailScreenState extends State<RoastDetailScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    // ログのカッピング結果がnullの場合、空のリストを作成
+    widget.roastLog.cuppingResults ??= [];
+  }
+
   // 焙煎情報を編集
   // RoastInfoDialogを表示して、編集した情報を保存
   void _editRoastInfo() async {
@@ -39,7 +50,7 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
 
   // カッピング結果を日付順に取得
   List<CuppingResult> get _sortedCuppingResults {
-    var results = List<CuppingResult>.from(widget.roastLog.cuppingResults);
+    var results = List<CuppingResult>.from(widget.roastLog.cuppingResults as Iterable);
     results.sort((a, b) => b.date.compareTo(a.date));
     return results;
   }
@@ -51,15 +62,12 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => const CuppingResultScreen(),
-      ),
+      ),      
     );
 
-    debugPrint('New result: $newResult');
-    debugPrint('New result type: ${newResult.runtimeType}');
-    debugPrint('New result aroma: ${(newResult as CuppingResult).aroma}');
     if (newResult != null && newResult is CuppingResult) {
       setState(() {
-        widget.roastLog.cuppingResults.add(newResult);
+        widget.roastLog.cuppingResults!.add(newResult);
       });
     }
   }
@@ -75,8 +83,8 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
 
     if (updatedResult != null && updatedResult is CuppingResult) {
       setState(() {
-        int index = widget.roastLog.cuppingResults.indexOf(result);
-        widget.roastLog.cuppingResults[index] = updatedResult;
+        int index = widget.roastLog.cuppingResults!.indexOf(result);
+        widget.roastLog.cuppingResults![index] = updatedResult;
       });
     }
   }
@@ -98,72 +106,104 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 焙煎情報の表示
-            ListTile(
-              title: const Text('Bean Name'),
-              subtitle: Text(widget.roastLog.beanInfo.name),
+            // RoastInfo
+            ComponentsContainer(
+              labelTitle: 'Roast Info',
+              buttonTitle: 'Preview',
+              // roast_logger_screenでroastlogを表示
+              buttonAction: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RoastLoggerScreen(roastLog: widget.roastLog, isEdit: true),
+                ),
+              ),
+              child: RoastInfoWidget(roastInfo: widget.roastLog.roastInfo),              
             ),
+
             ListTile(
-              title: const Text('Origin'),
-              subtitle: Text(widget.roastLog.beanInfo.origin),
-            ),
-            ListTile(
-              title: const Text('Process'),
-              subtitle: Text(widget.roastLog.beanInfo.process),
-            ),
-            ListTile(
-              title: const Text('Roast Date'),
-              subtitle: Text(widget.roastLog.roastInfo.date),
-            ),
-            ListTile(
-              title: const Text('Roast Level'),
-              subtitle: Text(widget.roastLog.roastInfo.roastLevelName),
-            ),
-            // カッピング結果の表示
-            const Divider(),
-            ListTile(
-              title: const Text('Cupping Results'),
+              title: const Text('Cupping Results (sorted by date)'),
               trailing: IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: _addCuppingResult,
               ),
             ),
-            _sortedCuppingResults.isNotEmpty
-                ? ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _sortedCuppingResults.length,
-                    itemBuilder: (context, index) {
-                      final result = _sortedCuppingResults[index];
-                      return ListTile(
-                        title: Text(
-                          'Date: ${result.date.toLocal().toString().split(' ')[0]}',
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Overall: ${result.overall}'),
-                            Wrap(
-                              spacing: 4.0,
-                              runSpacing: 4.0,
-                              children: result.flavors.map((flavorName) {
-                                // フレーバーノードを検索して色を取得
-                                FlavorNode? flavorNode = findFlavorNodeByName(flavorWheelData, flavorName);
-                                return Chip(
-                                  label: Text(flavorName),
-                                  backgroundColor: flavorNode?.color ?? Colors.grey[200],
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                        ),
-                        onTap: () => _editCuppingResult(result),
-                      );
-                    },
-                  )
-                : const ListTile(
-                    title: Text('No cupping results yet'),
+            
+            // カッピング結果のリスト
+            
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: cuppingResult!.length,
+              itemBuilder: (context, index) {
+                final result = cuppingResult[index];
+                return ListTile(
+                  title: Text(
+                    'Date: ${result.date.toLocal().toString().split(' ')[0]}',
                   ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Overall: ${result.overall}'),
+                      Wrap(
+                        spacing: 4.0,
+                        runSpacing: 4.0,
+                        children: result.flavors.map((flavorName) {
+                          // フレーバーノードを検索して色を取得
+                          FlavorNode? flavorNode = findFlavorNodeByName(flavorWheelData, flavorName);
+                          return Chip(
+                            label: Text(flavorName),
+                            backgroundColor: flavorNode?.color ?? Colors.grey[200],
+                            // 背景色と対比するテキスト色を設定
+                            labelStyle: TextStyle(
+                              color: ThemeData.estimateBrightnessForColor(flavorNode?.color ?? Colors.grey[200]!) == Brightness.light
+                                  ? Colors.black
+                                  : Colors.white,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                  onTap: () => _editCuppingResult(result),
+                );
+              },
+            ),
+            // _sortedCuppingResults.isNotEmpty
+            //     ? ListView.builder(
+            //         shrinkWrap: true,
+            //         physics: const NeverScrollableScrollPhysics(),
+            //         itemCount: _sortedCuppingResults.length,
+            //         itemBuilder: (context, index) {
+            //           final result = _sortedCuppingResults[index];
+            //           return ListTile(
+            //             title: Text(
+            //               'Date: ${result.date.toLocal().toString().split(' ')[0]}',
+            //             ),
+            //             subtitle: Column(
+            //               crossAxisAlignment: CrossAxisAlignment.start,
+            //               children: [
+            //                 Text('Overall: ${result.overall}'),
+            //                 Wrap(
+            //                   spacing: 4.0,
+            //                   runSpacing: 4.0,
+            //                   children: result.flavors.map((flavorName) {
+            //                     // フレーバーノードを検索して色を取得
+            //                     FlavorNode? flavorNode = findFlavorNodeByName(flavorWheelData, flavorName);
+            //                     return Chip(
+            //                       label: Text(flavorName),
+            //                       backgroundColor: flavorNode?.color ?? Colors.grey[200],
+            //                     );
+            //                   }).toList(),
+            //                 ),
+            //               ],
+            //             ),
+            //             onTap: () => _editCuppingResult(result),
+            //           );
+            //         },
+            //       )
+            //     : const ListTile(
+            //         title: Text('No cupping results yet'),
+            //       ),
           ],
         ),
       ),

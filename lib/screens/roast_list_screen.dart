@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/cupping_result.dart';
 import '../models/roast_log.dart';
 import '../models/bean_info.dart';
 import '../models/roast_info.dart';
@@ -49,6 +50,21 @@ class _RoastListScreenState extends State<RoastListScreen> {
             roastLevel: 10.0,
             roastLevelName: 'Light',
           ),
+          cuppingResults: [
+            // サンプルのカッピング結果
+            CuppingResult(
+              date: DateTime(2023, 10, 02),
+              aroma: 8,
+              acidity: 7,
+              body: 6,
+              flavor: 8,
+              aftertaste: 7,
+              balance: 7,
+              overall: 7,
+              notes: 'Fruity, floral, tea-like',
+              flavors: ['Fruity', 'Floral', 'Tea-like'],
+            ),
+          ],
         ),
         // 他のサンプルデータ
       ];
@@ -79,7 +95,7 @@ class _RoastListScreenState extends State<RoastListScreen> {
   void _navigateToRoastLogger() async {
     final newRoastLog = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const RoastLoggerScreen()),
+      MaterialPageRoute(builder: (context) => RoastLoggerScreen()),
     );
 
     if (newRoastLog != null && newRoastLog is RoastLog) {
