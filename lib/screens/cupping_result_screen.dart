@@ -16,13 +16,15 @@ class CuppingResultScreen extends StatefulWidget {
 class _CuppingResultScreenState extends State<CuppingResultScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  late double _aroma;
   late double _flavor;
   late double _aftertaste;
   late double _acidity;
-  late double _body;
+  late double _sweetness;
+  late double _cleancup;
+  late double _mousefeel;
   late double _balance;
   late double _overall;
+  late double _score;
   late DateTime _date;
   late TextEditingController _notesController;
   List<String> _selectedFlavors = [];
@@ -32,15 +34,19 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
     super.initState();
     final cuppingResult = widget.cuppingResult;
     _date = cuppingResult?.date ?? DateTime.now();
-    _aroma = cuppingResult?.aroma ?? 0.0;
-    _flavor = cuppingResult?.flavor ?? 0.0;
-    _aftertaste = cuppingResult?.aftertaste ?? 0.0;
-    _acidity = cuppingResult?.acidity ?? 0.0;
-    _body = cuppingResult?.body ?? 0.0;
-    _balance = cuppingResult?.balance ?? 0.0;
-    _overall = cuppingResult?.overall ?? 0.0;
+    _flavor = cuppingResult?.flavor ?? 6.0;
+    _aftertaste = cuppingResult?.aftertaste ?? 6.0;
+    _acidity = cuppingResult?.acidity ?? 6.0;
+    _sweetness = cuppingResult?.sweetness ?? 6.0;
+    _cleancup = cuppingResult?.cleancup ?? 6.0;
+    _mousefeel = cuppingResult?.mousefeel ?? 6.0;
+    _balance = cuppingResult?.balance ?? 6.0;
+    _overall = cuppingResult?.overall ?? 6.0;
+    _score = cuppingResult?.score ?? 0.0;
     _notesController = TextEditingController(text: cuppingResult?.notes);
     _selectedFlavors = cuppingResult?.flavors ?? [];
+
+    _calcScore();
   }
 
     // 日付ピッカーの追加
@@ -62,13 +68,15 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
     if (_formKey.currentState!.validate()) {
       final newCuppingResult = CuppingResult(
         date: _date,
-        aroma: _aroma,
         flavor: _flavor,
         aftertaste: _aftertaste,
         acidity: _acidity,
-        body: _body,
+        sweetness: _sweetness,
+        cleancup: _cleancup,
+        mousefeel: _mousefeel,
         balance: _balance,
         overall: _overall,
+        score: _score,
         notes: _notesController.text,
         flavors: _selectedFlavors,
       );
@@ -103,7 +111,7 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Cupping Results'),
+        title: const Text('Cupping Form'),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),
@@ -126,41 +134,55 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
                   onPressed: _selectDate,
                 ),
               ),
-              _buildSlider('Aroma', _aroma, (value) {
+              _buildSlider('Clean Cup', _cleancup, (value) {
                 setState(() {
-                  _aroma = value;
+                  _cleancup = value;
+                  _calcScore();                  
+                });
+              }),
+              _buildSlider('Sweetness', _sweetness, (value) {
+                setState(() {
+                  _sweetness = value;
+                  _calcScore();
                 });
               }),
               _buildSlider('Flavor', _flavor, (value) {
                 setState(() {
                   _flavor = value;
-                });
-              }),
-              _buildSlider('Aftertaste', _aftertaste, (value) {
-                setState(() {
-                  _aftertaste = value;
+                  _calcScore();
                 });
               }),
               _buildSlider('Acidity', _acidity, (value) {
                 setState(() {
                   _acidity = value;
+                  _calcScore();
                 });
               }),
-              _buildSlider('Body', _body, (value) {
+              _buildSlider('Mousefeel', _mousefeel, (value) {
                 setState(() {
-                  _body = value;
+                  _mousefeel = value;
+                  _calcScore();
+                });
+              }),
+              _buildSlider('Aftertaste', _aftertaste, (value) {
+                setState(() {
+                  _aftertaste = value;
+                  _calcScore();
                 });
               }),
               _buildSlider('Balance', _balance, (value) {
                 setState(() {
                   _balance = value;
+                  _calcScore();
                 });
               }),
               _buildSlider('Overall', _overall, (value) {
                 setState(() {
                   _overall = value;
+                  _calcScore();
                 });
               }),
+              Text('Score: ${_score.toStringAsFixed(1)}'),
               const SizedBox(height: 16.0),
               TextFormField(
                 controller: _notesController,
@@ -187,5 +209,10 @@ class _CuppingResultScreenState extends State<CuppingResultScreen> {
         ),
       ),
     );
+  }
+
+  void _calcScore() {
+    double total = _flavor + _aftertaste + _acidity + _sweetness + _cleancup + _mousefeel + _balance + _overall;
+    _score = total * (100 / 80);
   }
 }

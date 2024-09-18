@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:roast_logger/screens/roast_logger_screen.dart';
+import 'package:roast_logger/utils/dialogs.dart';
 import '../data/flavor_wheel_data.dart';
 import '../dialogs/roast_info_dialog.dart';
 import '../models/roast_info.dart';
@@ -109,7 +110,7 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
             // RoastInfo
             ComponentsContainer(
               labelTitle: 'Roast Info',
-              buttonTitle: 'Preview',
+              buttonTitle: 'Roast Log',
               // roast_logger_screenでroastlogを表示
               buttonAction: () => Navigator.push(
                 context,
@@ -121,7 +122,7 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
             ),
 
             ListTile(
-              title: const Text('Cupping Results (sorted by date)'),
+              title: const Text('Cupping Results'),
               trailing: IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: _addCuppingResult,
@@ -137,10 +138,25 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
               itemBuilder: (context, index) {
                 final result = cuppingResult[index];
                 return ListTile(
-                  title: Text(
-                    'Date: ${result.date.toLocal().toString().split(' ')[0]}',
-                  ),
-                  subtitle: Column(
+                  title: 
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Date: ${result.date.toLocal().toString().split(' ')[0]}'),
+                        TextButton(
+                          child: const Text('Delete'),
+                          onPressed: () async {
+                            bool? delete = await showConfirmDialog(context, 'Delete', 'Are you sure you want to delete this cupping result?', 'Delete', 'Cancel');
+                            if (delete == true) {
+                              setState(() {
+                                widget.roastLog.cuppingResults!.remove(result);
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  subtitle: 
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Overall: ${result.overall}'),
