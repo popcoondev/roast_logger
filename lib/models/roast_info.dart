@@ -1,6 +1,8 @@
 // models/roast_info.dart
+import 'package:uuid/uuid.dart';
 
 class RoastInfo {
+  String id;
   String date;
   String time;
   String roaster;
@@ -11,6 +13,7 @@ class RoastInfo {
   String roastLevelName;
 
   RoastInfo({
+    String? id,
     required this.date,
     required this.time,
     required this.roaster,
@@ -19,5 +22,5 @@ class RoastInfo {
     required this.roastTime,
     required this.roastLevel,
     required this.roastLevelName,
-  });
+  }) : id = id ?? Uuid().v4();
 }

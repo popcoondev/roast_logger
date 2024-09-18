@@ -1,6 +1,8 @@
 // models/cupping_result.dart
+import 'package:uuid/uuid.dart';
 
 class CuppingResult {
+  String? id;
   DateTime date;
   double flavor;
   double sweetness;
@@ -15,6 +17,7 @@ class CuppingResult {
   List<String> flavors;
 
   CuppingResult({
+    String? id,
     required this.date,
     this.flavor = 0,
     this.sweetness = 0,
@@ -27,7 +30,7 @@ class CuppingResult {
     this.score = 0,
     this.notes = '',
     this.flavors = const [],
-  });
+  }) : id = id ?? Uuid().v4();
 
   // データ保存のために toJson と fromJson を追加できます
   Map<String, dynamic> toJson() => {
