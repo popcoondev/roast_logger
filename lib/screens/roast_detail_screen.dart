@@ -35,7 +35,9 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
       context: context,
       builder: (context) {
         return RoastInfoDialog(roastInfo: widget.roastLog.roastInfo, onSave: (RoastInfo ) { 
-          Navigator.pop(context, RoastInfo);
+          setState(() {
+            widget.roastLog.roastInfo = RoastInfo;
+          });
          },);
       },
     );

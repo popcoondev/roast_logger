@@ -2,13 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'roast_list_screen.dart';
+import 'green_list_screen.dart';
+
 // 他の管理ページができたらインポートします
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   final List<Widget> _screens = const [
-    Center(child: Text('Green Management')), // Green管理ページのプレースホルダー
+    GreenListScreen(), // Green管理ページ
     RoastListScreen(), // Roast管理ページ
     Center(child: Text('Drink Management')), // Drink管理ページのプレースホルダー
   ];
