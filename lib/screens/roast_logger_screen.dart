@@ -5,7 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:roast_logger/widgets/timer_small_widget.dart';
 import '../dialogs/chart_settings_dialog.dart';
-import '../models/bean_info.dart';
+import '../models/green_bean.dart';
 import '../models/chart_settings.dart';
 import '../models/roast_info.dart';
 import '../models/log_entry.dart';
@@ -62,7 +62,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
     _roastLog ??= RoastLog(
         logEntries: [],
         currentTime: 0,
-        beanInfo: BeanInfo(
+        beanInfo: GreenBean(
           name: '',
           origin: '',
           process: '',
@@ -615,7 +615,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
       builder: (context) {
         return BeanInfoDialog(
           beanInfo: _roastLog!.beanInfo,
-          onSave: (BeanInfo updatedBeanInfo) {
+          onSave: (GreenBean updatedBeanInfo) {
             setState(() {
               _roastLog!.beanInfo = updatedBeanInfo;
             });

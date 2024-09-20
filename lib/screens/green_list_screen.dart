@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:roast_logger/dialogs/bean_info_dialog.dart';
 import '../helper/database_helper.dart';
-import '../models/bean_info.dart';
+import '../models/green_bean.dart';
 import '../widgets/green_list_item.dart';
 import 'green_detail_screen.dart';
 import 'roast_logger_screen.dart'; // RoastLogger画面をインポート
@@ -14,7 +14,7 @@ class GreenListScreen extends StatefulWidget {
 }
 
 class _GreenListScreenState extends State<GreenListScreen> {
-  List<BeanInfo> _beanInfos = []; // ローストログのリスト
+  List<GreenBean> _beanInfos = []; // ローストログのリスト
 
   // ソートオプション
   String _sortOption = 'Date';
@@ -29,20 +29,20 @@ class _GreenListScreenState extends State<GreenListScreen> {
 
   void _loadBeanInfos() async {
     DatabaseHelper dbHelper = DatabaseHelper();
-    List<BeanInfo> beanList = await dbHelper.getBeans();
+    List<GreenBean> beanList = await dbHelper.getBeans();
     setState(() {
       _beanInfos = beanList;
       _sortBeanInfo();
     });
   }
 
-  void _addBeanInfo(BeanInfo beanInfo) async {
+  void _addBeanInfo(GreenBean beanInfo) async {
     DatabaseHelper dbHelper = DatabaseHelper();
     await dbHelper.insertGreenBean(beanInfo);
     _loadBeanInfos();
   }
 
-  void _deleteBeanInfo(BeanInfo beanInfo) async {
+  void _deleteBeanInfo(GreenBean beanInfo) async {
     DatabaseHelper dbHelper = DatabaseHelper();
     await dbHelper.deleteBeanInfo(beanInfo.id);
     _loadBeanInfos();
@@ -71,7 +71,7 @@ class _GreenListScreenState extends State<GreenListScreen> {
 
   // 新しい生豆データの作成 showDialogでBeanInfoFormを表示
   void addBeanInfo() {
-    BeanInfo beanInfo = BeanInfo(name: '', origin: '', process: '');
+    GreenBean beanInfo = GreenBean(name: '', origin: '', process: '');
     showDialog(
       context: context,
       builder: (context) {
@@ -128,7 +128,7 @@ class _GreenListScreenState extends State<GreenListScreen> {
           return GreenListItem(
             beanInfo: _beanInfos[index],
             onTap: () async {
-              BeanInfo? result = await Navigator.push(
+              GreenBean? result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => GreenDetailScreen(beanInfo: _beanInfos[index]),

@@ -1,6 +1,7 @@
 // screens/home_screen.dart
 
 import 'package:flutter/material.dart';
+import '../helper/database_helper.dart';
 import 'roast_list_screen.dart';
 import 'green_list_screen.dart';
 
@@ -17,6 +18,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    DatabaseHelper databaseHelper = DatabaseHelper();
+    databaseHelper.deleteGreenBeansTable();
     return DefaultTabController(
       length: 3, // タブの数
       child: Scaffold(

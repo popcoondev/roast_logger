@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:roast_logger/models/bean_info.dart';
+import 'package:roast_logger/models/green_bean.dart';
 import 'package:roast_logger/utils/dialogs.dart';
 import '../dialogs/bean_info_dialog.dart';
 import '../helper/database_helper.dart';
@@ -8,7 +8,7 @@ import '../widgets/components_container.dart';
 import 'roast_logger_screen.dart';
 
 class GreenDetailScreen extends StatefulWidget {
-  BeanInfo beanInfo;
+  GreenBean beanInfo;
 
   GreenDetailScreen({required this.beanInfo});
 
@@ -23,7 +23,7 @@ class _GreenDetailScreenState extends State<GreenDetailScreen> {
     super.initState();
   }
 
-  void _updateBeanInfo(BeanInfo beanInfo) async {
+  void _updateBeanInfo(GreenBean beanInfo) async {
     DatabaseHelper dbHelper = DatabaseHelper();
     await dbHelper.updateBeanInfo(beanInfo);
     debugPrint('BeanInfo updated');
@@ -32,12 +32,12 @@ class _GreenDetailScreenState extends State<GreenDetailScreen> {
   }
 
   void _editBeanInfo() async {
-    final updatedBeanInfo = await showDialog<BeanInfo>(
+    final updatedBeanInfo = await showDialog<GreenBean>(
       context: context,
       builder: (context) {
         return BeanInfoDialog(
           beanInfo: widget.beanInfo,
-          onSave: (BeanInfo newBeanInfo) {
+          onSave: (GreenBean newBeanInfo) {
             setState(() {
               widget.beanInfo = newBeanInfo;
               _updateBeanInfo(widget.beanInfo);

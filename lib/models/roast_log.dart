@@ -1,6 +1,6 @@
 // models/roast_log.dart
 
-import 'bean_info.dart';
+import 'green_bean.dart';
 import 'roast_info.dart';
 import 'log_entry.dart';
 import 'cupping_result.dart';
@@ -10,7 +10,7 @@ class RoastLog {
   String? id = Uuid().v4();
   List<LogEntry> logEntries;
   int currentTime;
-  BeanInfo beanInfo;
+  GreenBean beanInfo;
   RoastInfo roastInfo;
   List<CuppingResult>? cuppingResults;
 

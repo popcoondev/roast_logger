@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import '../models/bean_info.dart';
+import '../models/green_bean.dart';
 import '../models/roast_info.dart';
 import '../models/cupping_result.dart';
 // import '../models/drink.dart';
@@ -39,30 +39,40 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE green_beans (
         id TEXT PRIMARY KEY,
+        createdAt TEXT,
+        updatedAt TEXT,
         name TEXT NOT NULL,
         origin TEXT,
-        process TEXT
+        process TEXT,
+        variety TEXT,
+        farmName TEXT,
+        altitude TEXT,
+        description TEXT,
+        notes TEXT
       )
     ''');
   }
 
   printBeans() async {
+    print('printBeans');
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('green_beans');
     print(maps);
   }
 
   // Beanの取得
-  Future<List<BeanInfo>> getBeans() async {
+  Future<List<GreenBean>> getBeans() async {
+    print('getBeans');
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('green_beans');
     return List.generate(maps.length, (i) {
-      return BeanInfo.fromMap(maps[i]);
+      return GreenBean.fromMap(maps[i]);
     });
   }
 
   // Beanの挿入
-  Future<void> insertGreenBean(BeanInfo bean) async {
+  Future<void> insertGreenBean(GreenBean bean) async {
+    print('insertGreenBean');
     final db = await database;
     try {
       await db.insert(
@@ -76,8 +86,9 @@ class DatabaseHelper {
   }
 
   // Beanの更新
-  Future<void> updateBeanInfo(BeanInfo bean) async {
-    final db = await database;
+  Future<void> updateBeanInfo(GreenBean bean) async {
+    print('updateBeanInfo');    
+    final db = await database;  
     try {
       await db.update(
         'green_beans',
@@ -92,6 +103,7 @@ class DatabaseHelper {
 
   // Beanの削除
   Future<void> deleteBeanInfo(String id) async {
+    print('deleteBeanInfo');
     final db = await database;
     try {
       await db.delete(
@@ -99,6 +111,22 @@ class DatabaseHelper {
         where: 'id = ?',
         whereArgs: [id],
       );
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  // green_beansテーブルの削除
+  // getDatabasesPath(), 'roast_logger.db'のファイルを削除する
+  Future<void> deleteGreenBeansTable() async {
+    print('deleteGreenBeansTable');
+    final db = await database;
+    try {
+      await db.execute('DROP TABLE IF EXISTS green_beans');
+
+      // テーブルを再作成する
+      await _onCreate(db, 1);  // バージョンに応じて設定
+      print('green_beansテーブルを再作成しました。');
     } catch (e) {
       print(e);
     }

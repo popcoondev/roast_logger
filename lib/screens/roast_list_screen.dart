@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/cupping_result.dart';
 import '../models/roast_log.dart';
-import '../models/bean_info.dart';
+import '../models/green_bean.dart';
 import '../models/roast_info.dart';
 import '../widgets/roast_list_item.dart';
 import 'roast_detail_screen.dart';
@@ -35,7 +35,7 @@ class _RoastListScreenState extends State<RoastListScreen> {
         RoastLog(
           logEntries: [],
           currentTime: 600,
-          beanInfo: BeanInfo(
+          beanInfo: GreenBean(
             name: 'Ethiopia Sidamo',
             origin: 'Ethiopia',
             process: 'Washed',
