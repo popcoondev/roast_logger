@@ -59,6 +59,7 @@ class _BeanInfoDialogState extends State<BeanInfoDialog> {
         ElevatedButton(
           onPressed: () {
             widget.onSave(BeanInfo(
+              id: widget.beanInfo.id,
               name: _nameController.text,
               origin: _originController.text,
               process: _processController.text,

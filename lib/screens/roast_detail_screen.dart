@@ -50,6 +50,11 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
 
   }
 
+  void _deleteRoastInfo() async {
+    // 確認ダイアログを表示
+    bool? delete = await showConfirmDialog(context, 'Delete', 'Are you sure you want to delete this roast log?', 'Delete', 'Cancel');
+
+  }
 
   // カッピング結果を日付順に取得
   List<CuppingResult> get _sortedCuppingResults {
@@ -99,12 +104,7 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Roast Details'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _editRoastInfo,
-          ),
-        ],
+        actions: [],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -112,17 +112,21 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
             // RoastInfo
             ComponentsContainer(
               labelTitle: 'Roast Info',
-              buttonTitle: 'Roast Log',
-              // roast_logger_screenでroastlogを表示
-              buttonAction: () => Navigator.push(
+              buttonTitle: 'Edit',
+              buttonAction: _editRoastInfo,
+              buttonTitle2: 'Delete',
+              buttonAction2: _deleteRoastInfo,
+              child: RoastInfoWidget(roastInfo: widget.roastLog.roastInfo),              
+            ),
+            ListTile(
+              title: const Text('Roast Log'),
+              onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => RoastLoggerScreen(roastLog: widget.roastLog, isEdit: true),
                 ),
               ),
-              child: RoastInfoWidget(roastInfo: widget.roastLog.roastInfo),              
             ),
-
             ListTile(
               title: const Text('Cupping Results'),
               trailing: IconButton(

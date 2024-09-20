@@ -40,6 +40,8 @@ dependencies:
   google_fonts: ^6.2.1
   font_awesome_flutter: ^10.7.0
   uuid: ^3.0.6
+  sqflite: ^2.0.0+4
+  path_provider: ^2.0.11
   
 dev_dependencies:
   flutter_test:

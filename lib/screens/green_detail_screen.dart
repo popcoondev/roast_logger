@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:roast_logger/models/bean_info.dart';
+import 'package:roast_logger/utils/dialogs.dart';
 import '../dialogs/bean_info_dialog.dart';
+import '../helper/database_helper.dart';
 import '../widgets/bean_info_widget.dart';
 import '../widgets/components_container.dart';
+import 'roast_logger_screen.dart';
 
 class GreenDetailScreen extends StatefulWidget {
   BeanInfo beanInfo;
@@ -14,11 +17,18 @@ class GreenDetailScreen extends StatefulWidget {
 }
 
 class _GreenDetailScreenState extends State<GreenDetailScreen> {
-  bool _isEdited = false;
 
   @override
   void initState() {
     super.initState();
+  }
+
+  void _updateBeanInfo(BeanInfo beanInfo) async {
+    DatabaseHelper dbHelper = DatabaseHelper();
+    await dbHelper.updateBeanInfo(beanInfo);
+    debugPrint('BeanInfo updated');
+    
+    dbHelper.printBeans();
   }
 
   void _editBeanInfo() async {
@@ -30,34 +40,37 @@ class _GreenDetailScreenState extends State<GreenDetailScreen> {
           onSave: (BeanInfo newBeanInfo) {
             setState(() {
               widget.beanInfo = newBeanInfo;
-              _isEdited = true; // 編集フラグを立てる
+              _updateBeanInfo(widget.beanInfo);
             });
           },
         );
       },
     );
+  }
 
-    if (updatedBeanInfo != null) {
-      setState(() {
-        widget.beanInfo = updatedBeanInfo;
-      });
+  void _deleteBeanInfo() async {
+    final bool? isDelete = await showConfirmDialog(context, 'Delete Bean Info', 'Are you sure you want to delete this bean info?', 'Delete', 'Cancel');
+    if (isDelete != null && isDelete) {
+      DatabaseHelper dbHelper = DatabaseHelper();
+      await dbHelper.deleteBeanInfo(widget.beanInfo.id);
+      Navigator.of(context).pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.pop(context, _isEdited ? widget.beanInfo : null);
-        return false; // デフォルトの戻る動作をキャンセル
-      },
-      child: Scaffold(
+    return Scaffold(
         appBar: AppBar(
           title: const Text('Green Details'),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: _editBeanInfo,
+            TextButton(
+              onPressed: () async {
+                final newRoastLog = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RoastLoggerScreen()),
+                );
+              },
+              child: const Text('Let\'s Roast!'),
             ),
           ],
         ),
@@ -67,12 +80,15 @@ class _GreenDetailScreenState extends State<GreenDetailScreen> {
               ComponentsContainer(
                 labelTitle: 'Bean Info',
                 child: BeanInfoWidget(beanInfo: widget.beanInfo),
+                buttonTitle: 'Edit',
+                buttonAction: _editBeanInfo,
+                buttonTitle2: 'Delete',
+                buttonAction2: _deleteBeanInfo,
               ),
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
 }

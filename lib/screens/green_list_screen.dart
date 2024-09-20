@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:roast_logger/dialogs/bean_info_dialog.dart';
+import '../helper/database_helper.dart';
 import '../models/bean_info.dart';
 import '../widgets/green_list_item.dart';
 import 'green_detail_screen.dart';
@@ -26,29 +27,25 @@ class _GreenListScreenState extends State<GreenListScreen> {
     
   }
 
-  void _loadBeanInfos() {
-    // サンプルデータを使用
+  void _loadBeanInfos() async {
+    DatabaseHelper dbHelper = DatabaseHelper();
+    List<BeanInfo> beanList = await dbHelper.getBeans();
     setState(() {
-      _beanInfos = [
-        // サンプルのローストログ
-        BeanInfo(
-            name: 'Ethiopia Sidamo',
-            origin: 'Ethiopia',
-            process: 'Washed',
-          ),
-        BeanInfo(
-            name: 'Ethiopia Yirgacheffe',
-            origin: 'Ethiopia',
-            process: 'Natural',
-          ),
-        BeanInfo(
-            name: 'Guatemala Antigua',
-            origin: 'Guatemala',
-            process: 'Washed',
-          ), 
-      ];
+      _beanInfos = beanList;
+      _sortBeanInfo();
     });
-    _sortBeanInfo(); // ロード後にソート
+  }
+
+  void _addBeanInfo(BeanInfo beanInfo) async {
+    DatabaseHelper dbHelper = DatabaseHelper();
+    await dbHelper.insertGreenBean(beanInfo);
+    _loadBeanInfos();
+  }
+
+  void _deleteBeanInfo(BeanInfo beanInfo) async {
+    DatabaseHelper dbHelper = DatabaseHelper();
+    await dbHelper.deleteBeanInfo(beanInfo.id);
+    _loadBeanInfos();
   }
 
   void _sortBeanInfo() {
@@ -83,11 +80,13 @@ class _GreenListScreenState extends State<GreenListScreen> {
             setState(() {
               _beanInfos.add(newBeanInfo);
               _sortBeanInfo();
+              _addBeanInfo(newBeanInfo);
             });
           });
       },
     );
   }
+
 
   // 生豆データの詳細表示（GreenDetailScreenへの遷移）
   // void _navigateToRoastDetail(RoastLog roastLog) {
@@ -136,15 +135,8 @@ class _GreenListScreenState extends State<GreenListScreen> {
                 ),
               );
 
-              debugPrint('result: $result');
-              if (result != null) {
-                setState(() {
-                  debugPrint('Updating bean info');
-                  _beanInfos[index] = result;
-                  _sortBeanInfo(); // ソートを再適用する場合
-                });
-              }
-            },
+              _loadBeanInfos();
+              },
           );
         },
       ),
