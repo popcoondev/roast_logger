@@ -6,6 +6,7 @@ import '../models/roast_log.dart';
 import '../models/green_bean.dart';
 import '../models/roast_bean.dart';
 import '../widgets/roast_list_item.dart';
+import 'input_bean_data_screen.dart';
 import 'roast_detail_screen.dart';
 import 'roast_logger_screen.dart'; // RoastLogger画面をインポート
 
@@ -30,6 +31,7 @@ class _RoastListScreenState extends State<RoastListScreen> {
   }
   
   void _loadRoastBeanInfos() async {
+    print('loadRoastBeanInfos');
     DatabaseHelper dbHelper = DatabaseHelper();
     List<RoastBean> roastList = await dbHelper.getRoastBeans();
     setState(() {
@@ -90,11 +92,14 @@ class _RoastListScreenState extends State<RoastListScreen> {
   }
 
   // 焙煎データの詳細表示（RoastDetailScreenへの遷移）
-  void _navigateToRoastDetail(RoastBean roastBean) {
-    Navigator.push(
+  void _navigateToRoastDetail(RoastBean roastBean) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => RoastDetailScreen(roastBean: roastBean)),
     );
+
+    _loadRoastBeanInfos();
+
   }
 
   @override
@@ -123,7 +128,13 @@ class _RoastListScreenState extends State<RoastListScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addRoastBeanInfo,
+        // onPressed: addRoastBeanInfo,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => InputBeanDataScreen()),
+          );
+        },
         child: const Icon(Icons.add),
       ),
     );

@@ -30,6 +30,17 @@ class GreenBean {
        createdAt = createdAt ?? DateTime.now(),
        updatedAt = updatedAt ?? DateTime.now(); 
 
+  // idベースで等価性をチェック
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    return other is GreenBean && other.id == id;
+  }
+  
+  @override
+  int get hashCode => id.hashCode;
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

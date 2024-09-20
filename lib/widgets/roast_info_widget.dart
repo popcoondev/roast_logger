@@ -19,7 +19,10 @@ class RoastInfoWidget extends StatelessWidget {
         Text('Pre-Roast Weight: ${roastInfo.preRoastWeight}g'),
         Text('Post-Roast Weight: ${roastInfo.postRoastWeight}g'),
         Text('Roast Time: ${roastInfo.roastTime}'),
-        Text('Roast Level: ${roastInfo.roastLevelName}'),
+        Text('Roast Level: ${roastInfo.roastLevel}'),
+        Text('${roastInfo.roastLevelName}'),
+        Text('Description: ${roastInfo.description}'),
+        Text('Notes: ${roastInfo.notes}'),
       ],
     );
   }

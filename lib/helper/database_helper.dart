@@ -5,6 +5,7 @@ import '../models/green_bean.dart';
 import '../models/roast_bean.dart';
 import '../models/cupping_result.dart';
 // import '../models/drink.dart';
+import 'dart:convert'; // jsonEncodeを使うために必要
 
 class DatabaseHelper {
   static final DatabaseHelper _instance = DatabaseHelper._internal();
@@ -73,12 +74,17 @@ class DatabaseHelper {
   }
 
   // GreenBeanテーブル操作　-----------------------------------------------------
-
   printBeans() async {
     print('printBeans');
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('green_beans');
-    print(maps);
+
+    // 見やすいフォーマットで出力
+    for (var map in maps) {
+      print(jsonEncode(map, toEncodable: (dynamic object) {
+        return object.toString(); // DateTimeなどのカスタムオブジェクトを文字列として処理する
+      }));
+    }
   }
 
   // Beanの取得
@@ -175,7 +181,13 @@ class DatabaseHelper {
     print('printRoastBeans');
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('roast_beans');
-    print(maps);
+
+    // 見やすいフォーマットで出力
+    for (var map in maps) {
+      print(jsonEncode(map, toEncodable: (dynamic object) {
+        return object.toString(); // DateTimeなどのカスタムオブジェクトを文字列として処理する
+      }));
+    }
   }
 
   // Roastの取得

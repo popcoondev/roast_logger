@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:roast_logger/screens/roast_logger_screen.dart';
 import 'package:roast_logger/utils/dialogs.dart';
+import 'package:sqflite/sqflite.dart';
 import '../data/flavor_wheel_data.dart';
+import '../dialogs/bean_info_dialog.dart';
 import '../dialogs/roast_info_dialog.dart';
 import '../helper/database_helper.dart';
+import '../models/green_bean.dart';
 import '../models/roast_bean.dart';
 import '../models/roast_log.dart';
 import '../models/cupping_result.dart';
+import '../widgets/bean_info_widget.dart';
 import '../widgets/components_container.dart';
 import '../widgets/roast_info_widget.dart';
 import 'cupping_result_screen.dart'; // カッピング結果の編集画面
@@ -57,6 +61,12 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
     // 確認ダイアログを表示
     bool? delete = await showConfirmDialog(context, 'Delete', 'Are you sure you want to delete this roast log?', 'Delete', 'Cancel');
 
+    if (delete == true) {
+      DatabaseHelper dbHelper = DatabaseHelper();
+      await dbHelper.deleteRoastBeanInfo(widget.roastBean.id);
+      Navigator.of(context).pop();
+    }
+
   }
 
   // カッピング結果を日付順に取得
@@ -104,7 +114,7 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-
+    DatabaseHelper dbHelper = DatabaseHelper();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Roast Details'),
@@ -113,6 +123,31 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            FutureBuilder<GreenBean?>(
+              future: dbHelper.getBeanById(widget.roastBean.greenBeanId),  // 非同期処理の結果を待つ
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  // 非同期処理がまだ完了していない間、ローディングインジケータを表示
+                  return Text('Loading...');
+                } else if (snapshot.hasError) {
+                  // エラーが発生した場合
+                  return Text('Error loading bean');
+                } else if (snapshot.hasData && snapshot.data != null) {
+                  // データ取得が成功し、greenBeanが存在する場合
+                  GreenBean greenBean = snapshot.data!;
+                  return ComponentsContainer(
+                    labelTitle: 'Bean Info',
+                    child: BeanInfoWidget(beanInfo: greenBean),
+                  );
+                } else {
+                  // データが見つからない場合
+                  return TextButton(
+                    child: const Text('Add Bean Info'),
+                    onPressed: addBeanInfo,
+                  );
+                }
+              },
+            ),
             // RoastInfo
             ComponentsContainer(
               labelTitle: 'Roast Info',
@@ -199,6 +234,25 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
         ),
       ),
     );
+  }
+
+  void addBeanInfo() async {
+    GreenBean beanInfo = GreenBean(name: '', origin: '', process: '');
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return BeanInfoDialog(beanInfo: beanInfo, 
+          onSave: (newBeanInfo) {
+            setState(() {
+              DatabaseHelper dbHelper = DatabaseHelper();
+              dbHelper.insertGreenBean(newBeanInfo);
+              widget.roastBean.greenBeanId = newBeanInfo.id;
+              _updateRoastBeanInfo(widget.roastBean);
+            });
+          });
+      },
+    );
+
   }
 
   FlavorNode? findFlavorNodeByName(List<FlavorNode> nodes, String name) {

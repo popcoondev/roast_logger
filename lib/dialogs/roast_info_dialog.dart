@@ -1,6 +1,8 @@
 // dialogs/roast_info_dialog.dart
 
 import 'package:flutter/material.dart';
+import 'package:roast_logger/helper/database_helper.dart';
+import '../models/green_bean.dart';
 import '../models/roast_bean.dart';
 
 class RoastInfoDialog extends StatefulWidget {
@@ -19,6 +21,7 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
   late TextEditingController _postRoastWeightController;
   late TextEditingController _roastTimeController;
   late TextEditingController _roastLevelController;
+  GreenBean? _selectedGreenBean;
 
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
@@ -75,12 +78,43 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
 
   @override
   Widget build(BuildContext context) {
+    DatabaseHelper dbHelper = DatabaseHelper();
     return AlertDialog(
       title: const Text('Edit Roast Info'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Select Green Bean
+            // dbHelperで取得したGreenBeanのリストから選択する
+            FutureBuilder(
+              future: dbHelper.getBeans(),
+              builder: (context, AsyncSnapshot<List<GreenBean>> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Text('Loading...');
+                } else if (snapshot.hasError) {
+                  return const Text('Error loading beans');
+                } else if (snapshot.hasData && snapshot.data != null) {
+                  return DropdownButtonFormField<GreenBean>(
+                    value: _selectedGreenBean,
+                    decoration: const InputDecoration(labelText: 'Green Bean'),
+                    items: snapshot.data!.map((GreenBean greenBean) {
+                      return DropdownMenuItem<GreenBean>(
+                        value: greenBean,
+                        child: Text('${greenBean.name} (${greenBean.origin})', maxLines: 2),
+                      );
+                    }).toList(),
+                    onChanged: (GreenBean? newValue) {
+                      setState(() {
+                        _selectedGreenBean = newValue!;
+                      });
+                    },
+                  );
+                } else {
+                  return const CircularProgressIndicator();
+                }
+              },
+            ),
             // Date Picker
             TextFormField(
               readOnly: true,
@@ -193,6 +227,7 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
               roastTime: _roastTimeController.text,
               roastLevel: _roastLevelController.text,
               roastLevelName: _selectedRoastLevelName,
+              greenBeanId: _selectedGreenBean?.id ?? '',
             ));
             Navigator.of(context).pop();
           },

@@ -18,14 +18,14 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    DatabaseHelper databaseHelper = DatabaseHelper();
-    databaseHelper.deleteGreenBeansTable();
-    databaseHelper.deleteRoastBeansTable();
+    // DatabaseHelper databaseHelper = DatabaseHelper();
+    // databaseHelper.deleteGreenBeansTable();
+    // databaseHelper.deleteRoastBeansTable();
     return DefaultTabController(
       length: 3, // タブの数
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Roast Logger'),
+          title: const Text('Coffeexp'),
           bottom: const TabBar(
             tabs: [
               Tab(text: 'Green'),
