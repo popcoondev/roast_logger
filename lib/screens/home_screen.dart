@@ -20,6 +20,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     DatabaseHelper databaseHelper = DatabaseHelper();
     databaseHelper.deleteGreenBeansTable();
+    databaseHelper.deleteRoastBeansTable();
     return DefaultTabController(
       length: 3, // タブの数
       child: Scaffold(

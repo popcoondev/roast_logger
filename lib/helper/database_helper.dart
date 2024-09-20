@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/green_bean.dart';
-import '../models/roast_info.dart';
+import '../models/roast_bean.dart';
 import '../models/cupping_result.dart';
 // import '../models/drink.dart';
 
@@ -51,7 +51,28 @@ class DatabaseHelper {
         notes TEXT
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE roast_beans (
+        id TEXT PRIMARY KEY,
+        createdAt TEXT,
+        updatedAt TEXT,
+        date TEXT ,
+        time TEXT,
+        roaster TEXT,
+        preRoastWeight TEXT,
+        postRoastWeight TEXT,
+        roastTime TEXT,
+        roastLevel TEXT,
+        roastLevelName TEXT,
+        description TEXT,
+        notes TEXT,
+        greenBeanId TEXT
+      )
+    ''');
   }
+
+  // GreenBeanテーブル操作　-----------------------------------------------------
 
   printBeans() async {
     print('printBeans');
@@ -68,6 +89,23 @@ class DatabaseHelper {
     return List.generate(maps.length, (i) {
       return GreenBean.fromMap(maps[i]);
     });
+  }
+
+  Future<GreenBean?> getBeanById(String id) async {
+    print('getBeanById');
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'green_beans',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return GreenBean.fromMap(maps.first);
+    } else {
+      print('No GreenBean found for id: $id');
+      return null;  // データが見つからない場合に null を返す
+    }
   }
 
   // Beanの挿入
@@ -131,5 +169,101 @@ class DatabaseHelper {
       print(e);
     }
   }
+
+  // RoastBeanテーブル操作　-----------------------------------------------------
+  printRoastBeans() async {
+    print('printRoastBeans');
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('roast_beans');
+    print(maps);
+  }
+
+  // Roastの取得
+  Future<List<RoastBean>> getRoastBeans() async {
+    print('getRoastBeans');
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('roast_beans');
+    return List.generate(maps.length, (i) {
+      return RoastBean.fromMap(maps[i]);
+    });
+  }
+
+  Future<RoastBean> getRoastBeanById(String id) {
+    print('getRoastBeanById');
+    final db = database;
+    return db.then((db) async {
+      final List<Map<String, dynamic>> maps = await db.query(
+        'roast_beans',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      return RoastBean.fromMap(maps.first);
+    });
+  }
+
+  // Roastの挿入
+  Future<void> insertRoastBean(RoastBean roast) async {
+    print('insertRoastBean');
+    final db = await database;
+    try {
+      await db.insert(
+        'roast_beans',
+        roast.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  // Roastの更新
+  Future<void> updateRoastBeanInfo(RoastBean roast) async {
+    print('updateRoastBeanInfo');    
+    final db = await database;  
+    try {
+      await db.update(
+        'roast_beans',
+        roast.toMap(),
+        where: 'id = ?',
+        whereArgs: [roast.id], 
+      );
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  // Roastの削除
+  Future<void> deleteRoastBeanInfo(String id) async {
+    print('deleteRoastBeanInfo');
+    final db = await database;
+    try {
+      await db.delete(
+        'roast_beans',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      print('deleteRoastBeanInfo error');
+      print(e);
+    }
+  }
+
+  // roast_beansテーブルの削除
+  // getDatabasesPath(), 'roast_logger.db'のファイルを削除する
+  Future<void> deleteRoastBeansTable() async {
+    print('deleteRoastBeansTable');
+    final db = await database;
+    try {
+      await db.execute('DROP TABLE IF EXISTS roast_beans');
+
+      // テーブルを再作成する
+      await _onCreate(db, 1);  // バージョンに応じて設定
+      print('roast_beansテーブルを再作成しました。');
+    } catch (e) {
+      print('deleteRoastBeansTable error');
+      print(e);
+    }
+  }
+
 
 }

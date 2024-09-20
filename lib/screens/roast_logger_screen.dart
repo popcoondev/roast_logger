@@ -7,7 +7,7 @@ import 'package:roast_logger/widgets/timer_small_widget.dart';
 import '../dialogs/chart_settings_dialog.dart';
 import '../models/green_bean.dart';
 import '../models/chart_settings.dart';
-import '../models/roast_info.dart';
+import '../models/roast_bean.dart';
 import '../models/log_entry.dart';
 import '../models/roast_log.dart';
 
@@ -67,14 +67,14 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
           origin: '',
           process: '',
         ),
-        roastInfo: RoastInfo(
+        roastInfo: RoastBean(
           date: '',
           time: '',
           roaster: '',
           preRoastWeight: '',
           postRoastWeight: '',
           roastTime: '',
-          roastLevel: 0,
+          roastLevel: '',
           roastLevelName: '',
         ),
       );
@@ -632,7 +632,7 @@ class _RoastLoggerState extends State<RoastLoggerScreen> {
       builder: (context) {
         return RoastInfoDialog(
           roastInfo: _roastLog!.roastInfo,
-          onSave: (RoastInfo updatedRoastInfo) {
+          onSave: (RoastBean updatedRoastInfo) {
             setState(() {
               _roastLog!.roastInfo = updatedRoastInfo;
             });

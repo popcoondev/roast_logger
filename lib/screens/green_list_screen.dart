@@ -17,7 +17,7 @@ class _GreenListScreenState extends State<GreenListScreen> {
   List<GreenBean> _beanInfos = []; // ローストログのリスト
 
   // ソートオプション
-  String _sortOption = 'Date';
+  String _sortOption = 'Name';
 
   @override
   void initState() {

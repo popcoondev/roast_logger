@@ -3,7 +3,8 @@ import 'package:roast_logger/screens/roast_logger_screen.dart';
 import 'package:roast_logger/utils/dialogs.dart';
 import '../data/flavor_wheel_data.dart';
 import '../dialogs/roast_info_dialog.dart';
-import '../models/roast_info.dart';
+import '../helper/database_helper.dart';
+import '../models/roast_bean.dart';
 import '../models/roast_log.dart';
 import '../models/cupping_result.dart';
 import '../widgets/components_container.dart';
@@ -11,43 +12,45 @@ import '../widgets/roast_info_widget.dart';
 import 'cupping_result_screen.dart'; // カッピング結果の編集画面
 
 class RoastDetailScreen extends StatefulWidget {
-  RoastLog roastLog;
+  RoastBean roastBean;
 
-  RoastDetailScreen({required this.roastLog});
+  RoastDetailScreen({required this.roastBean});
 
   @override
   _RoastDetailScreenState createState() => _RoastDetailScreenState();
 }
 
 class _RoastDetailScreenState extends State<RoastDetailScreen> {
+  List<CuppingResult> cuppingResults = [];
 
   @override
   void initState() {
     super.initState();
-    // ログのカッピング結果がnullの場合、空のリストを作成
-    widget.roastLog.cuppingResults ??= [];
+    // TODO: cupping_resultsテーブルからroast_idに一致するカッピング結果を取得
   }
 
   // 焙煎情報を編集
+  void _updateRoastBeanInfo(RoastBean roastBean) async {
+    DatabaseHelper dbHelper = DatabaseHelper();
+    await dbHelper.updateRoastBeanInfo(roastBean);
+    debugPrint('RoastBean updated');
+    
+    dbHelper.printRoastBeans();    
+  }
+
   // RoastInfoDialogを表示して、編集した情報を保存
   void _editRoastInfo() async {
-    final updatedRoastInfo = await showDialog(
+    final updatedRoastBean = await showDialog(
       context: context,
       builder: (context) {
-        return RoastInfoDialog(roastInfo: widget.roastLog.roastInfo, onSave: (RoastInfo ) { 
+        return RoastInfoDialog(roastInfo: widget.roastBean, onSave: (roastBean ) { 
           setState(() {
-            widget.roastLog.roastInfo = RoastInfo;
+            widget.roastBean = roastBean;
+            _updateRoastBeanInfo(widget.roastBean);
           });
          },);
       },
     );
-
-    if (updatedRoastInfo != null && updatedRoastInfo is RoastInfo) {
-      setState(() {
-        widget.roastLog.roastInfo = updatedRoastInfo;
-      });
-    }
-
   }
 
   void _deleteRoastInfo() async {
@@ -58,7 +61,7 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
 
   // カッピング結果を日付順に取得
   List<CuppingResult> get _sortedCuppingResults {
-    var results = List<CuppingResult>.from(widget.roastLog.cuppingResults as Iterable);
+    var results = List<CuppingResult>.from(cuppingResults as Iterable);
     results.sort((a, b) => b.date.compareTo(a.date));
     return results;
   }
@@ -75,7 +78,8 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
 
     if (newResult != null && newResult is CuppingResult) {
       setState(() {
-        widget.roastLog.cuppingResults!.add(newResult);
+        cuppingResults.add(newResult);
+        //TODO: cupping_resultsテーブルに新しいカッピング結果を追加
       });
     }
   }
@@ -91,15 +95,15 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
 
     if (updatedResult != null && updatedResult is CuppingResult) {
       setState(() {
-        int index = widget.roastLog.cuppingResults!.indexOf(result);
-        widget.roastLog.cuppingResults![index] = updatedResult;
+        int index = cuppingResults.indexOf(result);
+        cuppingResults[index] = updatedResult;
+        //TODO: cupping_resultsテーブルのカッピング結果を更新
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final cuppingResult = widget.roastLog.cuppingResults;
 
     return Scaffold(
       appBar: AppBar(
@@ -116,17 +120,18 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
               buttonAction: _editRoastInfo,
               buttonTitle2: 'Delete',
               buttonAction2: _deleteRoastInfo,
-              child: RoastInfoWidget(roastInfo: widget.roastLog.roastInfo),              
+              child: RoastInfoWidget(roastInfo: widget.roastBean),              
             ),
-            ListTile(
-              title: const Text('Roast Log'),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => RoastLoggerScreen(roastLog: widget.roastLog, isEdit: true),
-                ),
-              ),
-            ),
+            //TODO: roast_logsテーブルからroast_idに一致するカッピング結果を取得
+            // ListTile(
+            //   title: const Text('Roast Log'),
+            //   onTap: () => Navigator.push(
+            //     context,
+            //     MaterialPageRoute(
+            //       builder: (context) => RoastLoggerScreen(roastLog: widget.roastLog, isEdit: true),
+            //     ),
+            //   ),
+            // ),
             ListTile(
               title: const Text('Cupping Results'),
               trailing: IconButton(
@@ -136,13 +141,12 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
             ),
             
             // カッピング結果のリスト
-            
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: cuppingResult!.length,
+              itemCount: cuppingResults.length,
               itemBuilder: (context, index) {
-                final result = cuppingResult[index];
+                final result = cuppingResults[index];
                 return ListTile(
                   title: 
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -154,7 +158,8 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
                             bool? delete = await showConfirmDialog(context, 'Delete', 'Are you sure you want to delete this cupping result?', 'Delete', 'Cancel');
                             if (delete == true) {
                               setState(() {
-                                widget.roastLog.cuppingResults!.remove(result);
+                                cuppingResults.remove(result);
+                                //TODO: cupping_resultsテーブルからカッピング結果を削除
                               });
                             }
                           },
@@ -190,42 +195,6 @@ class _RoastDetailScreenState extends State<RoastDetailScreen> {
                 );
               },
             ),
-            // _sortedCuppingResults.isNotEmpty
-            //     ? ListView.builder(
-            //         shrinkWrap: true,
-            //         physics: const NeverScrollableScrollPhysics(),
-            //         itemCount: _sortedCuppingResults.length,
-            //         itemBuilder: (context, index) {
-            //           final result = _sortedCuppingResults[index];
-            //           return ListTile(
-            //             title: Text(
-            //               'Date: ${result.date.toLocal().toString().split(' ')[0]}',
-            //             ),
-            //             subtitle: Column(
-            //               crossAxisAlignment: CrossAxisAlignment.start,
-            //               children: [
-            //                 Text('Overall: ${result.overall}'),
-            //                 Wrap(
-            //                   spacing: 4.0,
-            //                   runSpacing: 4.0,
-            //                   children: result.flavors.map((flavorName) {
-            //                     // フレーバーノードを検索して色を取得
-            //                     FlavorNode? flavorNode = findFlavorNodeByName(flavorWheelData, flavorName);
-            //                     return Chip(
-            //                       label: Text(flavorName),
-            //                       backgroundColor: flavorNode?.color ?? Colors.grey[200],
-            //                     );
-            //                   }).toList(),
-            //                 ),
-            //               ],
-            //             ),
-            //             onTap: () => _editCuppingResult(result),
-            //           );
-            //         },
-            //       )
-            //     : const ListTile(
-            //         title: Text('No cupping results yet'),
-            //       ),
           ],
         ),
       ),

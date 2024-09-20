@@ -1,11 +1,11 @@
 // dialogs/roast_info_dialog.dart
 
 import 'package:flutter/material.dart';
-import '../models/roast_info.dart';
+import '../models/roast_bean.dart';
 
 class RoastInfoDialog extends StatefulWidget {
-  final RoastInfo roastInfo;
-  final Function(RoastInfo) onSave;
+  final RoastBean roastInfo;
+  final Function(RoastBean) onSave;
 
   const RoastInfoDialog({Key? key, required this.roastInfo, required this.onSave}) : super(key: key);
 
@@ -26,6 +26,7 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
 
   // List of roast level names 8 names
   final List<String> _roastLevelNames = [
+    '',
     'Light',
     'Cinnamon',
     'Medium',
@@ -180,14 +181,17 @@ class _RoastInfoDialogState extends State<RoastInfoDialog> {
             String formattedDate = _selectedDate.toLocal().toString().split(' ')[0];
             String formattedTime = _selectedTime.format(context);
 
-            widget.onSave(RoastInfo(
+            widget.onSave(RoastBean(
+              id: widget.roastInfo.id,
+              createdAt: widget.roastInfo.createdAt,
+              updatedAt: DateTime.now(),
               date: formattedDate,
               time: formattedTime,
               roaster: _roasterController.text,
               preRoastWeight: _preRoastWeightController.text,
               postRoastWeight: _postRoastWeightController.text,
               roastTime: _roastTimeController.text,
-              roastLevel: double.tryParse(_roastLevelController.text) ?? 0.0,
+              roastLevel: _roastLevelController.text,
               roastLevelName: _selectedRoastLevelName,
             ));
             Navigator.of(context).pop();

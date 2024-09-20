@@ -1,10 +1,10 @@
 // widgets/roast_info_widget.dart
 
 import 'package:flutter/material.dart';
-import '../models/roast_info.dart';
+import '../models/roast_bean.dart';
 
 class RoastInfoWidget extends StatelessWidget {
-  final RoastInfo roastInfo;
+  final RoastBean roastInfo;
 
   const RoastInfoWidget({Key? key, required this.roastInfo}) : super(key: key);
 

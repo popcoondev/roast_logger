@@ -46,7 +46,7 @@ class GreenBean {
     };
   }
 
-  factory GreenBean.fromMap(Map<String, dynamic> map) {
+  static GreenBean fromMap(Map<String, dynamic> map) {
     return GreenBean(
       id: map['id'],
       createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt']) : null,

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import '../dialogs/roast_info_dialog.dart';
+import '../helper/database_helper.dart';
 import '../models/cupping_result.dart';
 import '../models/roast_log.dart';
 import '../models/green_bean.dart';
-import '../models/roast_info.dart';
+import '../models/roast_bean.dart';
 import '../widgets/roast_list_item.dart';
 import 'roast_detail_screen.dart';
 import 'roast_logger_screen.dart'; // RoastLogger画面をインポート
@@ -15,7 +17,7 @@ class RoastListScreen extends StatefulWidget {
 }
 
 class _RoastListScreenState extends State<RoastListScreen> {
-  List<RoastLog> _roastLogs = []; // ローストログのリスト
+  List<RoastBean> _roastInfos = []; // ロースト情報のリスト
 
   // ソートオプション
   String _sortOption = 'Date';
@@ -24,61 +26,38 @@ class _RoastListScreenState extends State<RoastListScreen> {
   void initState() {
     super.initState();
     // ローストログのロードまたはサンプルデータの初期化
-    _loadRoastLogs();
+    _loadRoastBeanInfos();
   }
-
-  void _loadRoastLogs() {
-    // サンプルデータを使用
+  
+  void _loadRoastBeanInfos() async {
+    DatabaseHelper dbHelper = DatabaseHelper();
+    List<RoastBean> roastList = await dbHelper.getRoastBeans();
     setState(() {
-      _roastLogs = [
-        // サンプルのローストログ
-        RoastLog(
-          logEntries: [],
-          currentTime: 600,
-          beanInfo: GreenBean(
-            name: 'Ethiopia Sidamo',
-            origin: 'Ethiopia',
-            process: 'Washed',
-          ),
-          roastInfo: RoastInfo(
-            date: '2023-10-01',
-            time: '10:00',
-            roaster: 'Gene Cafe',
-            preRoastWeight: '200',
-            postRoastWeight: '170',
-            roastTime: '10',
-            roastLevel: 10.0,
-            roastLevelName: 'Light',
-          ),
-          cuppingResults: [
-            // サンプルのカッピング結果
-            CuppingResult(
-              date: DateTime(2023, 10, 02),
-              cleancup: 8,
-              sweetness: 8,
-              acidity: 8,
-              mousefeel: 8,
-              flavor: 8,
-              aftertaste: 8,
-              balance: 8,
-              overall: 8,
-              notes: 'Fruity, floral, tea-like',
-              flavors: ['Fruity', 'Floral', 'Tea-like'],
-            ),
-          ],
-        ),
-        // 他のサンプルデータ
-      ];
+      _roastInfos = roastList;
+      _sortRoastBeanInfo();
     });
-    _sortRoastLogs(); // ロード後にソート
   }
 
-  void _sortRoastLogs() {
+    void _addRoastBeanInfo(RoastBean roastInfo) async {
+    DatabaseHelper dbHelper = DatabaseHelper();
+    await dbHelper.insertRoastBean(roastInfo);
+    _loadRoastBeanInfos();
+  }
+
+  void _deleteRoastBeanInfo(RoastBean roastInfo) async {
+    DatabaseHelper dbHelper = DatabaseHelper();
+    await dbHelper.deleteRoastBeanInfo(roastInfo.id);
+    _loadRoastBeanInfos();
+  }
+
+
+
+  void _sortRoastBeanInfo() {
     setState(() {
       if (_sortOption == 'Date') {
-        _roastLogs.sort((a, b) => b.roastInfo.date.compareTo(a.roastInfo.date));
-      } else if (_sortOption == 'Bean Type') {
-        _roastLogs.sort((a, b) => a.beanInfo.name.compareTo(b.beanInfo.name));
+        _roastInfos.sort((a, b) => b.date.compareTo(a.date));
+      } else if (_sortOption == 'Roast Level') {
+        _roastInfos.sort((a, b) => a.roastLevelName.compareTo(b.roastLevelName));
       }
     });
   }
@@ -87,31 +66,34 @@ class _RoastListScreenState extends State<RoastListScreen> {
     if (value != null) {
       setState(() {
         _sortOption = value;
-        _sortRoastLogs();
+        _sortRoastBeanInfo();
       });
     }
   }
 
   // 新しい焙煎データの作成（RoastLogger画面への遷移）
-  void _navigateToRoastLogger() async {
-    final newRoastLog = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => RoastLoggerScreen()),
+  void addRoastBeanInfo() {
+    RoastBean roastInfo = RoastBean();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return RoastInfoDialog(roastInfo: roastInfo, 
+          onSave: (newRoastInfo) {
+            setState(() {
+              _roastInfos.add(newRoastInfo);
+              _sortRoastBeanInfo();
+              _addRoastBeanInfo(newRoastInfo);
+            });
+          });
+      },
     );
-
-    if (newRoastLog != null && newRoastLog is RoastLog) {
-      setState(() {
-        _roastLogs.add(newRoastLog);
-        _sortRoastLogs(); // ソートを更新
-      });
-    }
   }
 
   // 焙煎データの詳細表示（RoastDetailScreenへの遷移）
-  void _navigateToRoastDetail(RoastLog roastLog) {
+  void _navigateToRoastDetail(RoastBean roastBean) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => RoastDetailScreen(roastLog: roastLog)),
+      MaterialPageRoute(builder: (context) => RoastDetailScreen(roastBean: roastBean)),
     );
   }
 
@@ -119,29 +101,29 @@ class _RoastListScreenState extends State<RoastListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Roast Logs'),
+        title: const Text('Roast Beans'),
         actions: [
           // ソートオプション
           PopupMenuButton<String>(
             onSelected: _onSortOptionSelected,
             itemBuilder: (context) => [
-              const PopupMenuItem(value: 'Date', child: Text('Sort by Date')),
-              const PopupMenuItem(value: 'Bean Type', child: Text('Sort by Bean Type')),
+              const PopupMenuItem(value: 'Date', child: Text('Date')),
+              const PopupMenuItem(value: 'Roast Level', child: Text('Roast Level')),
             ],
           ),
         ],
       ),
       body: ListView.builder(
-        itemCount: _roastLogs.length,
+        itemCount: _roastInfos.length,
         itemBuilder: (context, index) {
           return RoastListItem(
-            roastLog: _roastLogs[index],
-            onTap: () => _navigateToRoastDetail(_roastLogs[index]),
+            roastBean: _roastInfos[index],
+            onTap: () => _navigateToRoastDetail(_roastInfos[index]),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToRoastLogger,
+        onPressed: addRoastBeanInfo,
         child: const Icon(Icons.add),
       ),
     );
